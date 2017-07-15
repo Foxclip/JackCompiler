@@ -1,6 +1,6 @@
 #include "debug.h"
 
-int activeDebugPrintLayer = TOKENS;
+int activeDebugPrintLayer = DL_NONE;
 
 void debugPrint(std::string str, DebugLayer layer) {
     if(layer == activeDebugPrintLayer) {

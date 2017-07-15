@@ -4,9 +4,8 @@
 #include <string>
 
 enum DebugLayer {
-    SYMBOLS,
-    TOKENS,
-    NONE
+    DL_SYMBOLS,
+    DL_NONE
 };
 
 extern int activeDebugPrintLayer;

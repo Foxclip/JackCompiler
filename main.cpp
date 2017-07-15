@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     std::string outputFilename = setOutputFile(name.substr(0, name.rfind(".")));
     Tokenizer tokenizer;
     tokenizer.tokenize(argv[1]);
+    tokenizer.printTokens();
 
     return 0;
 

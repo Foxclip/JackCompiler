@@ -2,30 +2,59 @@
 #include "debug.h"
 
 enum State {
-    SPACE,
-    SLASH,
-    STAR,
-    COMMENT,
-    MULTILINE_COMMENT,
-    ALNUM_TOKEN,
-    CHAR_TOKEN,
-    INT_TOKEN,
-    STRING
+    S_SPACE,
+    S_SLASH,
+    S_STAR,
+    S_COMMENT,
+    S_MULTILINE_COMMENT,
+    S_ALNUM_TOKEN,
+    S_CHAR_TOKEN,
+    S_INT_TOKEN,
+    S_STRING
 };
 
 const std::string charTokens = "{}()[].,;+-*/&|<>=-~";
 const std::string nalnumChars = "-_.";
+const std::vector<std::string> keywords = {"class", "constructor", "function", "method", "field",
+                                           "static", "var", "int", "char", "boolean", "void", "true",
+                                           "false", "null", "this", "let", "do", "if", "else", "while", "return"};
 
 void Tokenizer::addCharToken(char c) {
     std::string str;
     str += c;
-    tokens.push_back(str);
-    debugPrint(str + " ", TOKENS);
+    tokens.push_back({str, TT_SYMBOL});
 }
 
-void Tokenizer::addStringToken(std::string token) {
-    tokens.push_back(token);
-    debugPrint(token + " ", TOKENS);
+std::string typeToStr(TokenType type) {
+    std::string typeStr;
+    switch(type) {
+        case TT_KEYWORD: typeStr = "keyword";    break;
+        case TT_SYMBOL:  typeStr = "symbol";     break;
+        case TT_INT:     typeStr = "int";        break;
+        case TT_STRING:  typeStr = "string";     break;
+        case TT_ID:      typeStr = "identifier"; break;
+    }
+    return typeStr;
+}
+
+void Tokenizer::addStringToken(std::string token, TokenSubType subType) {
+    TokenType type;
+    if(subType == ST_ALNUM) {
+        type = TT_ID;
+        for(std::string str: keywords) {
+            if(str == token) {
+                type = TT_KEYWORD;
+                break;
+            }
+        }
+    }
+    if(subType == ST_INT) {
+        type = TT_INT;
+    }
+    if(subType == ST_STRING) {
+        type = TT_STRING;
+    }
+    tokens.push_back({token, type});
 }
 
 void Tokenizer::tokenize(std::string inputFilename) {
@@ -38,168 +67,175 @@ void Tokenizer::tokenize(std::string inputFilename) {
     std::string alphanumTokenBuffer;
     std::string intTokenBuffer;
     std::string stringConstantBuffer;
-    State currentState = SPACE;
+    State currentState = S_SPACE;
     while(inputStream >> std::noskipws >> c) {
-        debugPrintLine("", SYMBOLS);
-        debugPrint("State: ", SYMBOLS);
+        debugPrintLine("", DL_SYMBOLS);
+        debugPrint("State: ", DL_SYMBOLS);
         switch(currentState) {
-            case SPACE:             debugPrintLine("space",             SYMBOLS);  break;
-            case SLASH:             debugPrintLine("slash",             SYMBOLS);  break;
-            case STAR:              debugPrintLine("star",              SYMBOLS);  break;
-            case COMMENT:           debugPrintLine("comment",           SYMBOLS);  break;
-            case MULTILINE_COMMENT: debugPrintLine("multiline_comment", SYMBOLS);  break;
-            case ALNUM_TOKEN:       debugPrintLine("alnum_token",       SYMBOLS);  break;
-            case CHAR_TOKEN:        debugPrintLine("char_token",        SYMBOLS);  break;
-            case INT_TOKEN:         debugPrintLine("int_token",         SYMBOLS);  break;
-            case STRING:            debugPrintLine("string",            SYMBOLS);  break;
+            case S_SPACE:             debugPrintLine("space",             DL_SYMBOLS);  break;
+            case S_SLASH:             debugPrintLine("slash",             DL_SYMBOLS);  break;
+            case S_STAR:              debugPrintLine("star",              DL_SYMBOLS);  break;
+            case S_COMMENT:           debugPrintLine("comment",           DL_SYMBOLS);  break;
+            case S_MULTILINE_COMMENT: debugPrintLine("multiline_comment", DL_SYMBOLS);  break;
+            case S_ALNUM_TOKEN:       debugPrintLine("alnum_token",       DL_SYMBOLS);  break;
+            case S_CHAR_TOKEN:        debugPrintLine("char_token",        DL_SYMBOLS);  break;
+            case S_INT_TOKEN:         debugPrintLine("int_token",         DL_SYMBOLS);  break;
+            case S_STRING:            debugPrintLine("string",            DL_SYMBOLS);  break;
         }
         if(c == '\n') {
-            debugPrintLine("Read symbol \\n", SYMBOLS);
+            debugPrintLine("Read symbol \\n", DL_SYMBOLS);
         } else {
-            debugPrintLine(std::string("Read symbol ") + c, SYMBOLS);
+            debugPrintLine(std::string("Read symbol ") + c, DL_SYMBOLS);
         }
         if(c == '\n') {
-            if(currentState != MULTILINE_COMMENT && currentState != STAR) {
-                currentState = SPACE;
+            if(currentState != S_MULTILINE_COMMENT && currentState != S_STAR) {
+                currentState = S_SPACE;
                 continue;
-            } else if(currentState == STAR) {
-                currentState = MULTILINE_COMMENT;
+            } else if(currentState == S_STAR) {
+                currentState = S_MULTILINE_COMMENT;
                 continue;
             }
         }
         if(c == '/') {
-            debugPrintLine("Slash symbol found", SYMBOLS);
-            if(currentState == SLASH) {
-                debugPrintLine("Comment found", SYMBOLS);
-                currentState = COMMENT;
+            debugPrintLine("Slash symbol found", DL_SYMBOLS);
+            if(currentState == S_SLASH) {
+                debugPrintLine("Comment found", DL_SYMBOLS);
+                currentState = S_COMMENT;
                 continue;
-            } else if(currentState == SPACE) {
-                currentState = SLASH;
+            } else if(currentState == S_SPACE) {
+                currentState = S_SLASH;
                 continue;
-            } else if(currentState == STAR) {
-                currentState = SPACE;
+            } else if(currentState == S_STAR) {
+                currentState = S_SPACE;
                 continue;
             }
         }
         if(c != '/') {
-            if(currentState == STAR) {
-                currentState = MULTILINE_COMMENT;
+            if(currentState == S_STAR) {
+                currentState = S_MULTILINE_COMMENT;
                 continue;
             }
         }
         if(c == '*') {
-            if(currentState == SLASH) {
-                currentState = MULTILINE_COMMENT;
+            if(currentState == S_SLASH) {
+                currentState = S_MULTILINE_COMMENT;
                 continue;
-            } else if(currentState == MULTILINE_COMMENT) {
-                currentState = STAR;
+            } else if(currentState == S_MULTILINE_COMMENT) {
+                currentState = S_STAR;
                 continue;
             }
         }
         if(c == '"') {
-            if(currentState == SPACE || currentState == CHAR_TOKEN) {
-                currentState = STRING;
+            if(currentState == S_SPACE || currentState == S_CHAR_TOKEN) {
+                currentState = S_STRING;
                 stringConstantBuffer.clear();
                 continue;
-            } else if(currentState == STRING) {
-                currentState = SPACE;
-                addStringToken(stringConstantBuffer);
+            } else if(currentState == S_STRING) {
+                currentState = S_SPACE;
+                addStringToken(stringConstantBuffer, ST_STRING);
                 continue;
             }
         }
         if(c != '\n' && c != '"') {
-            if(currentState == STRING) {
+            if(currentState == S_STRING) {
                 stringConstantBuffer += c;
                 continue;
             }
         }
         if(std::isspace(c)) {
-            debugPrintLine("Whitespace symbol found", SYMBOLS);
-            if(currentState == ALNUM_TOKEN) {
-                currentState = SPACE;
-                addStringToken(alphanumTokenBuffer);
+            debugPrintLine("Whitespace symbol found", DL_SYMBOLS);
+            if(currentState == S_ALNUM_TOKEN) {
+                currentState = S_SPACE;
+                addStringToken(alphanumTokenBuffer, ST_ALNUM);
                 continue;
-            } else if(currentState == CHAR_TOKEN) {
-                currentState = SPACE;
+            } else if(currentState == S_CHAR_TOKEN) {
+                currentState = S_SPACE;
                 continue;
-            } else if(currentState == INT_TOKEN) {
-                currentState = SPACE;
-                addStringToken(intTokenBuffer);
+            } else if(currentState == S_INT_TOKEN) {
+                currentState = S_SPACE;
+                addStringToken(intTokenBuffer, ST_INT);
                 continue;
-            } else if(currentState == SLASH) {
-                currentState = SPACE;
+            } else if(currentState == S_SLASH) {
+                currentState = S_SPACE;
                 addCharToken('/');
                 continue;
             }
         }
         if(std::isalpha(c)) {
-            debugPrintLine("Letter symbol found", SYMBOLS);
-            if(currentState == SLASH) {
+            debugPrintLine("Letter symbol found", DL_SYMBOLS);
+            if(currentState == S_SLASH) {
                 addCharToken('/');
-                currentState = ALNUM_TOKEN;
+                currentState = S_ALNUM_TOKEN;
                 alphanumTokenBuffer.clear();
                 alphanumTokenBuffer += c;
                 continue;
-            } else if(currentState == SPACE || currentState == CHAR_TOKEN) {
-                currentState = ALNUM_TOKEN;
+            } else if(currentState == S_SPACE || currentState == S_CHAR_TOKEN) {
+                currentState = S_ALNUM_TOKEN;
                 alphanumTokenBuffer.clear();
                 alphanumTokenBuffer += c;
-                debugPrintLine("alphanumTokenBuffer: " + alphanumTokenBuffer, SYMBOLS);
+                debugPrintLine("alphanumTokenBuffer: " + alphanumTokenBuffer, DL_SYMBOLS);
                 continue;
-            } else if(currentState == ALNUM_TOKEN) {
+            } else if(currentState == S_ALNUM_TOKEN) {
                 alphanumTokenBuffer += c;
-                debugPrintLine("alphanumTokenBuffer: " + alphanumTokenBuffer, SYMBOLS);
+                debugPrintLine("alphanumTokenBuffer: " + alphanumTokenBuffer, DL_SYMBOLS);
                 continue;
             }
         }
         if(std::isdigit(c)) {
-            debugPrintLine("Digit found", SYMBOLS);
-            if(currentState == SLASH) {
+            debugPrintLine("Digit found", DL_SYMBOLS);
+            if(currentState == S_SLASH) {
                 addCharToken('/');
-                currentState = INT_TOKEN;
+                currentState = S_INT_TOKEN;
                 alphanumTokenBuffer.clear();
                 alphanumTokenBuffer += c;
                 continue;
-            } else if(currentState == SPACE || currentState == CHAR_TOKEN) {
-                currentState = INT_TOKEN;
+            } else if(currentState == S_SPACE || currentState == S_CHAR_TOKEN) {
+                currentState = S_INT_TOKEN;
                 intTokenBuffer.clear();
                 intTokenBuffer += c;
-                debugPrintLine("intTokenBuffer: " + intTokenBuffer, SYMBOLS);
+                debugPrintLine("intTokenBuffer: " + intTokenBuffer, DL_SYMBOLS);
                 continue;
-            } else if(currentState == ALNUM_TOKEN) {
+            } else if(currentState == S_ALNUM_TOKEN) {
                 alphanumTokenBuffer += c;
-                debugPrintLine("alphanumTokenBuffer: " + alphanumTokenBuffer, SYMBOLS);
+                debugPrintLine("alphanumTokenBuffer: " + alphanumTokenBuffer, DL_SYMBOLS);
                 continue;
-            } else if(currentState == INT_TOKEN) {
+            } else if(currentState == S_INT_TOKEN) {
                 intTokenBuffer += c;
-                debugPrintLine("intTokenBuffer: " + intTokenBuffer, SYMBOLS);
+                debugPrintLine("intTokenBuffer: " + intTokenBuffer, DL_SYMBOLS);
                 continue;
             }
         }
         if(charTokens.find(c) != std::string::npos) {
-            debugPrintLine("Char token found", SYMBOLS);
-            if(currentState == SPACE || currentState == CHAR_TOKEN) {
-                currentState = CHAR_TOKEN;
+            debugPrintLine("Char token found", DL_SYMBOLS);
+            if(currentState == S_SPACE || currentState == S_CHAR_TOKEN) {
+                currentState = S_CHAR_TOKEN;
                 addCharToken(c);
                 continue;
-            } else if(currentState == ALNUM_TOKEN) {
-                currentState = CHAR_TOKEN;
-                addStringToken(alphanumTokenBuffer);
+            } else if(currentState == S_ALNUM_TOKEN) {
+                currentState = S_CHAR_TOKEN;
+                addStringToken(alphanumTokenBuffer, ST_ALNUM);
                 addCharToken(c);
                 continue;
-            } else if(currentState == INT_TOKEN) {
-                currentState = CHAR_TOKEN;
-                addStringToken(intTokenBuffer);
+            } else if(currentState == S_INT_TOKEN) {
+                currentState = S_CHAR_TOKEN;
+                addStringToken(intTokenBuffer, ST_INT);
                 addCharToken(c);
                 continue;
             }
          }
         if(nalnumChars.find(c) != std::string::npos) {
-            if(currentState == ALNUM_TOKEN) {
+            if(currentState == S_ALNUM_TOKEN) {
                 alphanumTokenBuffer += c;
-                debugPrintLine("alphanumTokenBuffer: " + alphanumTokenBuffer, SYMBOLS);
+                debugPrintLine("alphanumTokenBuffer: " + alphanumTokenBuffer, DL_SYMBOLS);
                 continue;
             }
         }
+    }
+    debugPrintLine("", DL_SYMBOLS);
+}
+
+void Tokenizer::printTokens() {
+    for(Token token: tokens) {
+        std::cout << "'" << token.token << "' : " << typeToStr(token.type) << std::endl;
     }
 }
