@@ -32,13 +32,13 @@ public:
     void tokenize(std::string inputFilename);
     bool hasMoreTokens();
     void advance();
-    Token getToken();
+    Token currentToken();
     void printTokens();
 
 private:
 
     std::vector<Token> tokens;
-    int currentToken = 0;
+    int currentTokenIndex = 0;
 
     void addCharToken(char c);
     void addStringToken(std::string token, TokenSubType subType);

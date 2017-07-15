@@ -5,6 +5,7 @@
 
 enum DebugLayer {
     DL_SYMBOLS,
+    DL_PARSER,
     DL_NONE
 };
 

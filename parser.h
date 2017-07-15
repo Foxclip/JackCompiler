@@ -17,6 +17,7 @@ private:
     void writeXML(std::string line);
     void eat();
     void eat(std::string str);
+    void eatSome(std::vector<std::string> variants);
     void parseClass();
     void parseClassVarDec();
     void parseSubroutineDec();

@@ -63,7 +63,6 @@ void Tokenizer::tokenize(std::string inputFilename) {
     if(inputStream.bad()) {
         std::cout << "Error" << std::endl;
     }
-    std::cout << std::endl;
     char c;
     std::string alphanumTokenBuffer;
     std::string intTokenBuffer;
@@ -236,15 +235,15 @@ void Tokenizer::tokenize(std::string inputFilename) {
 }
 
 bool Tokenizer::hasMoreTokens() {
-    return currentToken != tokens.size() - 1;
+    return currentTokenIndex != tokens.size() - 1;
 }
 
 void Tokenizer::advance() {
-    currentToken++;
+    currentTokenIndex++;
 }
 
-Token Tokenizer::getToken() {
-    return tokens[currentToken];
+Token Tokenizer::currentToken() {
+    return tokens[currentTokenIndex];
 }
 
 void Tokenizer::printTokens() {
