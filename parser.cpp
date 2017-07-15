@@ -12,10 +12,10 @@ void Parser::eat() {
             writeXML("<identifier> " + tokenizer.currentToken().token + " </identifier>");
             tokenizer.advance();
         } else {
-            throw std::exception(std::string("identifier expected").c_str());
+            throw SyntaxError(std::string("identifier expected").c_str());
         }
     } else {
-        throw std::exception(std::string("identifier expected, but file ended").c_str());
+        throw SyntaxError(std::string("identifier expected, but file ended").c_str());
     }
 }
 
@@ -25,10 +25,10 @@ void Parser::eat(std::string str) {
             writeXML("<" + typeToStr(tokenizer.currentToken().type) + "> " + str + " </" + typeToStr(tokenizer.currentToken().type) + ">");
             tokenizer.advance();
         } else {
-            throw std::exception(std::string("'" + tokenizer.currentToken().token + "'" + ": " + str + " expected").c_str());
+            throw SyntaxError(std::string("'" + tokenizer.currentToken().token + "'" + ": " + str + " expected").c_str());
         }
     } else {
-        throw std::exception(std::string("'" + str + "'" + " expected, but file ended").c_str());
+        throw SyntaxError(std::string("'" + str + "'" + " expected, but file ended").c_str());
     }
 }
 
@@ -43,10 +43,10 @@ void Parser::eatSome(std::vector<std::string> variants) {
             writeXML("<" + typeToStr(tokenizer.currentToken().type) + "> " + tokenizer.currentToken().token + " </" + typeToStr(tokenizer.currentToken().type) + ">");
             tokenizer.advance();
         } else {
-            throw std::exception(std::string("'" + tokenizer.currentToken().token + "'" + ": " + variantListString + "expected").c_str());
+            throw SyntaxError(std::string("'" + tokenizer.currentToken().token + "'" + ": " + variantListString + "expected").c_str());
         }
     }  else {
-        throw std::exception(std::string(variantListString + " expected, but file ended").c_str());
+        throw SyntaxError(std::string(variantListString + " expected, but file ended").c_str());
     }
 }
 
@@ -58,14 +58,14 @@ void Parser::parseClass() {
     while(true) {
         try {
             parseClassVarDec();
-        } catch(std::exception e) {
+        } catch(SyntaxError e) {
             break;
         }
     }
     while(true) {
         try {
             parseSubroutineDec();
-        } catch(std::exception e) {
+        } catch(SyntaxError e) {
             break;
         }
     }
@@ -81,7 +81,7 @@ void Parser::parseClassVarDec() {
         try {
             eat(",");
             eat();
-        } catch(std::exception e) {
+        } catch(SyntaxError e) {
             break;
         }
     }
@@ -92,7 +92,7 @@ void Parser::parseClassVarDec() {
 void Parser::parseSubroutineDec() {
     writeXML("<subroutineDec>");
     eatSome({"constructor", "function", "method"});
-    throw std::exception("");
+    throw NotImplementedError("Not yet implemented");
     writeXML("</subroutineDec>");
 }
 
@@ -112,7 +112,7 @@ void Parser::parse(std::string outputFilename, Tokenizer tokenizer) {
     try {
         parseClass();
         debugPrintLine("Succesfully parsed", DL_PARSER);
-    } catch(std::exception e) {
-        std::cout << "Parse error: " + std::string(e.what()) << std::endl;
+    } catch(ParserError e) {
+        std::cout << "Parser error: " + std::string(e.what()) << std::endl;
     }
 }

@@ -27,8 +27,8 @@ struct Token {
 std::string typeToStr(TokenType type);
 
 class Tokenizer {
-public:
 
+public:
     void tokenize(std::string inputFilename);
     bool hasMoreTokens();
     void advance();
@@ -36,7 +36,6 @@ public:
     void printTokens();
 
 private:
-
     std::vector<Token> tokens;
     int currentTokenIndex = 0;
 
