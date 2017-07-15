@@ -1,11 +1,7 @@
 #include <iostream>
 #include "tokenizer.h"
+#include "parser.h"
 #include "debug.h"
-
-void writeXML(std::string outputFilename, std::string line) {
-    std::ofstream stream(outputFilename, std::ios_base::app);
-    stream << line.c_str() << std::endl;
-}
 
 std::string setOutputFile(std::string name) {
     std::string outputFilename = name + ".xml";
@@ -21,7 +17,9 @@ int main(int argc, char *argv[]) {
     std::string outputFilename = setOutputFile(name.substr(0, name.rfind(".")));
     Tokenizer tokenizer;
     tokenizer.tokenize(argv[1]);
-    tokenizer.printTokens();
+    //tokenizer.printTokens();
+    Parser parser;
+    parser.parse(outputFilename, tokenizer);
 
     return 0;
 

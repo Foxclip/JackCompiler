@@ -24,15 +24,21 @@ struct Token {
     TokenType type;
 };
 
+std::string typeToStr(TokenType type);
+
 class Tokenizer {
 public:
 
     void tokenize(std::string inputFilename);
+    bool hasMoreTokens();
+    void advance();
+    Token getToken();
     void printTokens();
 
 private:
 
     std::vector<Token> tokens;
+    int currentToken = 0;
 
     void addCharToken(char c);
     void addStringToken(std::string token, TokenSubType subType);
