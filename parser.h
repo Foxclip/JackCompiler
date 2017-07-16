@@ -52,6 +52,7 @@ private:
     void parseSubroutineDec();
     void parseParameterList();
     void parseSubroutineBody();
+    void parseVarDec();
     void parseStatements();
     void parseLetStatement();
 

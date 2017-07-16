@@ -27,15 +27,14 @@ void Parser::writeXML(std::string line) {
         }
     }
     stream << line << std::endl;
-    if(indentDone) {
-        return;
-    }
-    for(char c: line) {
-        if(c == '<' || c == '>') {
-            xmlIndentLevel += 0.5;
-        }
-        if(c == '/') {
-            xmlIndentLevel -= 2;
+    if(!indentDone) {
+        for(char c : line) {
+            if(c == '<' || c == '>') {
+                xmlIndentLevel += 0.5;
+            }
+            if(c == '/') {
+                xmlIndentLevel -= 2;
+            }
         }
     }
 }
@@ -143,13 +142,33 @@ void Parser::parseParameterList() {
 }
 
 void Parser::parseSubroutineBody() {
-    throw NotImplementedError("Subroutine body is not yet implemented");
+    writeXML("<subroutineBody>");
+    eatStr("{");
+    parseVarDec();
+    parseStatements();
+    eatStr("}");
+    writeXML("</subroutineBody>");
+}
+
+void Parser::parseVarDec() {
+    writeXML("<varDec>");
+    eatStr("var");
+    eatIdentifier();
+    eatIdentifier();
+    while(true) {
+        try {
+            eatStr(",");
+            eatIdentifier();
+        } catch(SyntaxError e) {
+            break;
+        }
+    }
+    eatStr(";");
+    writeXML("</varDec>");
 }
 
 void Parser::parseStatements() {
-    if(tokenName() == "let") {
-        parseLetStatement();
-    }
+    throw NotImplementedError("Statements are not implemented yet");
 }
 
 void Parser::parseLetStatement() {
