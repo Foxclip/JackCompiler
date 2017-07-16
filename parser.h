@@ -41,12 +41,15 @@ private:
     std::string outputFilename;
 
     void writeXML(std::string line);
-    void eat();
+    void eatIdentifier();
     void eat(std::string str);
     void eatSome(std::vector<std::string> variants);
+    void eatReturnType();
     void parseClass();
     void parseClassVarDec();
     void parseSubroutineDec();
+    void parseParameterList();
+    void parseSubroutineBody();
     void parseStatements();
     void parseLetStatement();
 

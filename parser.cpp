@@ -6,7 +6,7 @@ void Parser::writeXML(std::string line) {
     stream << line.c_str() << std::endl;
 }
 
-void Parser::eat() {
+void Parser::eatIdentifier() {
     if(tokenizer.hasMoreTokens()) {
         if(tokenizer.currentToken().type == TT_ID) {
             writeXML("<identifier> " + tokenizer.currentToken().token + " </identifier>");
@@ -50,10 +50,23 @@ void Parser::eatSome(std::vector<std::string> variants) {
     }
 }
 
+void Parser::eatReturnType() {
+    if(tokenizer.hasMoreTokens()) {
+        if(tokenizer.currentToken().token == "void" || tokenizer.currentToken().type == TT_ID) {
+            writeXML("<" + typeToStr(tokenizer.currentToken().type) + "> " + tokenizer.currentToken().token + " </" + typeToStr(tokenizer.currentToken().type) + ">");
+            tokenizer.advance();
+        } else {
+            throw SyntaxError(std::string("'" + tokenizer.currentToken().token + "'" + ": " + "Return type or 'void' expected").c_str());
+        }
+    } else {
+        throw SyntaxError(std::string("Return type or 'void' expected, but file ended").c_str());
+    }
+}
+
 void Parser::parseClass() {
     writeXML("<class>");
     eat("class");
-    eat();
+    eatIdentifier();
     eat("{");
     while(true) {
         try {
@@ -76,11 +89,11 @@ void Parser::parseClass() {
 void Parser::parseClassVarDec() {
     writeXML("<classVarDec>");
     eatSome({"static", "field"});
-    eat();
+    eatIdentifier();
     while(true) {
         try {
             eat(",");
-            eat();
+            eatIdentifier();
         } catch(SyntaxError e) {
             break;
         }
@@ -92,8 +105,21 @@ void Parser::parseClassVarDec() {
 void Parser::parseSubroutineDec() {
     writeXML("<subroutineDec>");
     eatSome({"constructor", "function", "method"});
-    throw NotImplementedError("Not yet implemented");
+    eatReturnType();
+    eatIdentifier();
+    eat("(");
+    parseParameterList();
+    eat(")");
+    parseSubroutineBody();
     writeXML("</subroutineDec>");
+}
+
+void Parser::parseParameterList() {
+    throw NotImplementedError("Parameter list is not yet implemented");
+}
+
+void Parser::parseSubroutineBody() {
+    throw NotImplementedError("Subroutine body is not yet implemented");
 }
 
 void Parser::parseStatements() {
