@@ -4,13 +4,32 @@
 double xmlIndentLevel = 0;
 
 void Parser::writeXML(std::string line) {
+    int braceCount = 0;
+    bool indentDone = false;
+    for(char c: line) {
+        if(c == '<' || c == '>') {
+            braceCount++;
+        }
+    }
+    if(braceCount == 2) {
+        for(char c: line) {
+            if(c == '/') {
+                xmlIndentLevel -= 1;
+                indentDone = true;
+                break;
+            }
+        }
+    }
     std::ofstream stream(outputFilename, std::ios_base::app);
     for(int i = 0; i < xmlIndentLevel; i++) {
         for(int j = 0; j < 2; j++) {
             stream << ' ';
         }
     }
-    stream << line.c_str() << std::endl;
+    stream << line << std::endl;
+    if(indentDone) {
+        return;
+    }
     for(char c: line) {
         if(c == '<' || c == '>') {
             xmlIndentLevel += 0.5;
@@ -106,7 +125,21 @@ void Parser::parseSubroutineDec() {
 }
 
 void Parser::parseParameterList() {
-    throw NotImplementedError("Parameter list is not yet implemented");
+    writeXML("<parameterList>");
+    try {
+        eatIdentifier();
+        eatIdentifier();
+        while(true) {
+            try {
+                eatStr(",");
+                eatIdentifier();
+                eatIdentifier();
+            } catch(SyntaxError e) {
+                break;
+            }
+        }
+    } catch(SyntaxError e) {}
+    writeXML("</parameterList>");
 }
 
 void Parser::parseSubroutineBody() {
