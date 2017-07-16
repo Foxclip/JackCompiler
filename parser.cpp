@@ -6,6 +6,7 @@ double xmlIndentLevel = 0;
 void Parser::writeXML(std::string line) {
     int braceCount = 0;
     bool indentDone = false;
+    char previousChar = 0;
     for(char c: line) {
         if(c == '<' || c == '>') {
             braceCount++;
@@ -13,11 +14,12 @@ void Parser::writeXML(std::string line) {
     }
     if(braceCount == 2) {
         for(char c: line) {
-            if(c == '/') {
+            if(c == '/' && previousChar == '<') {
                 xmlIndentLevel -= 1;
                 indentDone = true;
                 break;
             }
+            previousChar = c;
         }
     }
     std::ofstream stream(outputFilename, std::ios_base::app);
@@ -32,9 +34,10 @@ void Parser::writeXML(std::string line) {
             if(c == '<' || c == '>') {
                 xmlIndentLevel += 0.5;
             }
-            if(c == '/') {
+            if(c == '/' && previousChar == '<') {
                 xmlIndentLevel -= 2;
             }
+            previousChar = c;
         }
     }
 }
@@ -248,7 +251,11 @@ void Parser::parseWhileStatement() {
 }
 
 void Parser::parseDoStatement() {
-    throw NotImplementedError("Do statement is not implemented yet");
+    writeXML("<doStatement>");
+    eatStr("do");
+    parseSubroutineCall();
+    eatStr(";");
+    writeXML("</doStatement>");
 }
 
 void Parser::parseReturnStatement() {
@@ -256,6 +263,9 @@ void Parser::parseReturnStatement() {
 }
 
 void Parser::parseExpression() {
+    if(tokenName() == ")") {
+        return;
+    }
     writeXML("<expression>");
     parseTerm();
     while(true) {
