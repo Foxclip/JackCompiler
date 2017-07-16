@@ -317,8 +317,7 @@ void Parser::parseTerm() {
     writeXML("<term>");
     if(tokenType() == TT_INT || tokenType() == TT_STRING || tokenType() == TT_KEYWORD) {
         eatStr(tokenName());
-    }
-    if(tokenType() == TT_IDENTIFIER) {
+    } else if(tokenType() == TT_IDENTIFIER) {
         if(tokenizer.hasMoreTokens()) {
             if(tokenizer.nextToken().token == "[") {
                 eatIdentifier();
@@ -333,13 +332,11 @@ void Parser::parseTerm() {
         } else {
             eatIdentifier();
         }
-    }
-    if(tokenName() == "(") {
+    } else if(tokenName() == "(") {
         eatStr("(");
         parseExpression();
         eatStr(")");
-    }
-    if(tokenName() == "-" || tokenName() == "~") {
+    } else if(tokenName() == "-" || tokenName() == "~") {
         eatStr(tokenName());
         parseTerm();
     }
