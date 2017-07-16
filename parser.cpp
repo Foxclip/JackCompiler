@@ -259,11 +259,17 @@ void Parser::parseDoStatement() {
 }
 
 void Parser::parseReturnStatement() {
-    throw NotImplementedError("Return statement is not implemented yet");
+    writeXML("<returnStatement>");
+    eatStr("return");
+    try {
+        parseExpression();
+    } catch(SyntaxError e) {}
+    eatStr(";");
+    writeXML("</returnStatement>");
 }
 
 void Parser::parseExpression() {
-    if(tokenName() == ")") {
+    if(tokenName() == ")" || tokenName() == ";") {
         return;
     }
     writeXML("<expression>");

@@ -235,7 +235,7 @@ void Tokenizer::tokenize(std::string inputFilename) {
 }
 
 bool Tokenizer::hasMoreTokens() {
-    return currentTokenIndex != tokens.size() - 1;
+    return currentTokenIndex <= tokens.size() - 1;
 }
 
 void Tokenizer::advance() {
