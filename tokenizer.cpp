@@ -28,11 +28,11 @@ void Tokenizer::addCharToken(char c) {
 std::string typeToStr(TokenType type) {
     std::string typeStr;
     switch(type) {
-        case TT_KEYWORD: typeStr = "keyword";    break;
-        case TT_SYMBOL:  typeStr = "symbol";     break;
-        case TT_INT:     typeStr = "int";        break;
-        case TT_STRING:  typeStr = "string";     break;
-        case TT_IDENTIFIER:      typeStr = "identifier"; break;
+        case TT_KEYWORD:    typeStr = "keyword";            break;
+        case TT_SYMBOL:     typeStr = "symbol";             break;
+        case TT_INT:        typeStr = "integerConstant";    break;
+        case TT_STRING:     typeStr = "stringConstant";     break;
+        case TT_IDENTIFIER: typeStr = "identifier";         break;
     }
     return typeStr;
 }
@@ -244,6 +244,10 @@ void Tokenizer::advance() {
 
 Token Tokenizer::currentToken() {
     return tokens[currentTokenIndex];
+}
+
+Token Tokenizer::nextToken() {
+    return tokens[currentTokenIndex + 1];
 }
 
 void Tokenizer::printTokens() {

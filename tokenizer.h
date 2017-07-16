@@ -33,6 +33,7 @@ public:
     bool hasMoreTokens();
     void advance();
     Token currentToken();
+    Token nextToken();
     void printTokens();
 
 private:

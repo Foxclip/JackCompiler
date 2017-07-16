@@ -61,5 +61,9 @@ private:
     void parseDoStatement();
     void parseReturnStatement();
     void parseExpression();
+    void parseExpressionList();
+    void parseTerm();
+    void parseOp();
+    void parseSubroutineCall();
 
 };

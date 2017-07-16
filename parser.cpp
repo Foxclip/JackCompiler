@@ -220,22 +220,106 @@ void Parser::parseLetStatement() {
     eatStr("=");
     parseExpression();
     eatStr(";");
+    writeXML("</letStatement>");
 }
 
 void Parser::parseIfStatement() {
+    throw NotImplementedError("If statement is not implemented yet");
 }
 
 void Parser::parsewhileStatement() {
+    throw NotImplementedError("While statement is not implemented yet");
 }
 
 void Parser::parseDoStatement() {
+    throw NotImplementedError("Do statement is not implemented yet");
 }
 
 void Parser::parseReturnStatement() {
+    throw NotImplementedError("Return statement is not implemented yet");
 }
 
 void Parser::parseExpression() {
-    throw NotImplementedError("Expressions are not implemented yet");
+    writeXML("<expression>");
+    parseTerm();
+    while(true) {
+        try {
+            parseOp();
+            parseTerm();
+        } catch(SyntaxError e) {
+            break;
+        }
+    }
+    writeXML("</expression>");
+}
+
+void Parser::parseExpressionList() {
+    writeXML("<expressionList>");
+    try {
+        parseExpression();
+        while(true) {
+            try {
+                eatStr(",");
+                parseExpression();
+            } catch(SyntaxError e) {
+                break;
+            }
+        }
+    } catch(SyntaxError e) {}
+    writeXML("</expressionList>");
+}
+
+void Parser::parseTerm() {
+    writeXML("<term>");
+    if(tokenType() == TT_INT || tokenType() == TT_STRING || tokenType() == TT_KEYWORD) {
+        eatStr(tokenName());
+    }
+    if(tokenType() == TT_IDENTIFIER) {
+        if(tokenizer.hasMoreTokens()) {
+            if(tokenizer.nextToken().token == "[") {
+                eatIdentifier();
+                eatStr("[");
+                parseExpression();
+                eatStr("]");
+            } else if(tokenizer.nextToken().token == "(" || tokenizer.nextToken().token == ".") {
+                parseSubroutineCall();
+            } else {
+                eatIdentifier();
+            }
+        } else {
+            eatIdentifier();
+        }
+    }
+    if(tokenName() == "(") {
+        eatStr("(");
+        parseExpression();
+        eatStr(")");
+    }
+    if(tokenName() == "-" || tokenName() == "~") {
+        eatStr(tokenName());
+        parseTerm();
+    }
+    writeXML("</term>");
+}
+
+void Parser::parseOp() {
+    eat(std::string("+-*/&|<>=").find(tokenName()[0]) != std::string::npos, "binary operator");
+}
+
+void Parser::parseSubroutineCall() {
+    eatIdentifier();
+    if(tokenName() == "(") {
+        eatStr("(");
+        parseExpressionList();
+        eatStr(")");
+    }
+    if(tokenName() == ".") {
+        eatStr(".");
+        eatIdentifier();
+        eatStr("(");
+        parseExpressionList();
+        eatStr(")");
+    }
 }
 
 void Parser::parse(std::string outputFilename, Tokenizer tokenizer) {
