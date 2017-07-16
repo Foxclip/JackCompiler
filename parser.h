@@ -35,15 +35,16 @@ public:
 class Parser {
 
 public:
-    void parse(std::string outputFilename, Tokenizer tokenizer);
+    void parse(std::string outputFilename);
 
 private:
     Tokenizer tokenizer;
     std::string outputFilename;
+    double xmlIndentLevel = 0;
 
     void writeXML(std::string line);
     std::string tokenName();
-    TokenType tokenType();
+    int tokenType();
     void eat(bool valid, std::string whatExpected);
     void eatIdentifier();
     void eatType();

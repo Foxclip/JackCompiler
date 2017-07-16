@@ -1,8 +1,6 @@
 #include <algorithm>
 #include "parser.h"
 
-double xmlIndentLevel = 0;
-
 void Parser::writeXML(std::string line) {
     int braceCount = 0;
     bool indentDone = false;
@@ -46,7 +44,7 @@ std::string Parser::tokenName() {
     return tokenizer.currentToken().token;
 }
 
-TokenType Parser::tokenType() {
+int Parser::tokenType() {
     return tokenizer.currentToken().type;
 }
 
@@ -67,7 +65,7 @@ std::string xmlReplace(std::string str) {
 void Parser::eat(bool valid, std::string whatExpected) {
     if(tokenizer.hasMoreTokens()) {
         if(valid) {
-            writeXML("<" + typeToStr(tokenType()) + "> " + xmlReplace(tokenName()) + " </" + typeToStr(tokenType()) + ">");
+            writeXML("<" + tokenizer.typeToStr(tokenType()) + "> " + xmlReplace(tokenName()) + " </" + tokenizer.typeToStr(tokenType()) + ">");
             tokenizer.advance();
         } else {
             throw SyntaxError(std::string("'" + tokenName() + "'" + ": " + whatExpected + " expected").c_str());
@@ -362,14 +360,23 @@ void Parser::parseSubroutineCall() {
     }
 }
 
-void Parser::parse(std::string outputFilename, Tokenizer tokenizer) {
-    std::cout << "Parsing " + outputFilename << std::endl;
-    this->outputFilename = outputFilename;
-    this->tokenizer = tokenizer;
+std::string setOutputFile(std::string name) {
+    std::string outputFilename = name + ".xml";
+    std::ofstream clear1(outputFilename, std::ios::trunc);
+    return outputFilename;
+}
+
+void Parser::parse(std::string inputFilename) {
+    outputFilename = setOutputFile(inputFilename.substr(0, inputFilename.rfind(".")));
+    tokenizer = Tokenizer();
+    tokenizer.tokenize(inputFilename);
+    std::cout << "Parsing " + inputFilename << std::endl;
     try {
         parseClass();
         debugPrintLine("Succesfully parsed", DL_PARSER);
+        debugPrintLine("", DL_PARSER);
     } catch(ParserError e) {
         std::cout << "Parser error: " + std::string(e.what()) << std::endl;
+        std::cout << std::endl;
     }
 }

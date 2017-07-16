@@ -25,7 +25,7 @@ void Tokenizer::addCharToken(char c) {
     tokens.push_back({str, TT_SYMBOL});
 }
 
-std::string typeToStr(TokenType type) {
+std::string Tokenizer::typeToStr(int type) {
     std::string typeStr;
     switch(type) {
         case TT_KEYWORD:    typeStr = "keyword";            break;

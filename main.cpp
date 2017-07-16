@@ -1,25 +1,39 @@
 #include <iostream>
+#include "dirent.h"
 #include "tokenizer.h"
 #include "parser.h"
 #include "debug.h"
 
-std::string setOutputFile(std::string name) {
-    std::string outputFilename = name + ".xml";
-    std::cout << "Output file: " + outputFilename << std::endl;
-    std::ofstream clear1(outputFilename, std::ios::trunc);
-    std::ofstream clear2("debug.txt", std::ios::trunc);
-    return outputFilename;
+bool endsWith(std::string const &fullString, std::string const &ending) {
+    if(fullString.length() >= ending.length()) {
+        return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
 }
 
 int main(int argc, char *argv[]) {
 
-    std::string name(argv[1]);
-    std::string outputFilename = setOutputFile(name.substr(0, name.rfind(".")));
-    Tokenizer tokenizer;
-    tokenizer.tokenize(argv[1]);
-    //tokenizer.printTokens();
-    Parser parser;
-    parser.parse(outputFilename, tokenizer);
+    std::string inputName(argv[1]);
+    if(inputName.back() == '/' || inputName.back() == '\\') {
+        DIR *dir;
+        struct dirent *ent;
+        std::string dirName = inputName.substr(0, inputName.size() - 1);
+        if((dir = opendir(dirName.c_str())) != NULL) {
+            while((ent = readdir(dir)) != NULL) {
+                if(ent->d_type == DT_REG && endsWith(ent->d_name, ".jack")) {
+                    Parser parser;
+                    parser.parse(inputName + ent->d_name);
+                }
+            }
+            closedir(dir);
+        } else {
+            perror("Error");
+        }
+    } else {
+        Parser parser;
+        parser.parse(inputName);
+    }
 
     return 0;
 

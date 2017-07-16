@@ -21,10 +21,8 @@ enum TokenType {
 
 struct Token {
     std::string token;
-    TokenType type;
+    int type;
 };
-
-std::string typeToStr(TokenType type);
 
 class Tokenizer {
 
@@ -35,6 +33,7 @@ public:
     Token currentToken();
     Token nextToken();
     void printTokens();
+    std::string typeToStr(int type);
 
 private:
     std::vector<Token> tokens;
