@@ -241,6 +241,12 @@ void Parser::parseIfStatement() {
     eatStr("{");
     parseStatements();
     eatStr("}");
+    try {
+        eatStr("else");
+        eatStr("{");
+        parseStatements();
+        eatStr("}");
+    } catch(SyntaxError e) {}
     writeXML("</ifStatement>");
 }
 
