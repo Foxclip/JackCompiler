@@ -47,10 +47,24 @@ TokenType Parser::tokenType() {
     return tokenizer.currentToken().type;
 }
 
+std::string xmlReplace(std::string str) {
+    if(str.size() == 1) {
+        switch(str[0]) {
+            case '<':  return "&lt;";   break;
+            case '>':  return "&gt;";   break;
+            case '\"': return "&quot;"; break;
+            case '&':  return "&amp;";  break;
+            default:   return str;
+        }
+    } else {
+        return str;
+    }
+}
+
 void Parser::eat(bool valid, std::string whatExpected) {
     if(tokenizer.hasMoreTokens()) {
         if(valid) {
-            writeXML("<" + typeToStr(tokenType()) + "> " + tokenName() + " </" + typeToStr(tokenType()) + ">");
+            writeXML("<" + typeToStr(tokenType()) + "> " + xmlReplace(tokenName()) + " </" + typeToStr(tokenType()) + ">");
             tokenizer.advance();
         } else {
             throw SyntaxError(std::string("'" + tokenName() + "'" + ": " + whatExpected + " expected").c_str());
@@ -185,23 +199,17 @@ void Parser::parseStatements() {
         writeXML("<statements>");
     }
     while(true) {
-        try {
-            if(tokenName() == "let") {
-                parseLetStatement();
-            }
-            if(tokenName() == "if") {
-                parseIfStatement();
-            }
-            if(tokenName() == "while") {
-                parsewhileStatement();
-            }
-            if(tokenName() == "do") {
-                parseDoStatement();
-            }
-            if(tokenName() == "return") {
-                parseReturnStatement();
-            }
-        } catch(SyntaxError e) {
+        if(tokenName() == "let") {
+            parseLetStatement();
+        } else if(tokenName() == "if") {
+            parseIfStatement();
+        } else if(tokenName() == "while") {
+            parseWhileStatement();
+        } else if(tokenName() == "do") {
+            parseDoStatement();
+        } else if(tokenName() == "return") {
+            parseReturnStatement();
+        } else {
             break;
         }
     }
@@ -227,8 +235,16 @@ void Parser::parseIfStatement() {
     throw NotImplementedError("If statement is not implemented yet");
 }
 
-void Parser::parsewhileStatement() {
-    throw NotImplementedError("While statement is not implemented yet");
+void Parser::parseWhileStatement() {
+    writeXML("<whileStatement>");
+    eatStr("while");
+    eatStr("(");
+    parseExpression();
+    eatStr(")");
+    eatStr("{");
+    parseStatements();
+    eatStr("}");
+    writeXML("</whileStatement>");
 }
 
 void Parser::parseDoStatement() {

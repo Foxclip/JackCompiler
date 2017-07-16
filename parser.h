@@ -57,7 +57,7 @@ private:
     void parseStatements();
     void parseLetStatement();
     void parseIfStatement();
-    void parsewhileStatement();
+    void parseWhileStatement();
     void parseDoStatement();
     void parseReturnStatement();
     void parseExpression();
