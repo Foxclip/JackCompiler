@@ -16,7 +16,7 @@ enum TokenType {
     TT_SYMBOL,
     TT_INT,
     TT_STRING,
-    TT_ID
+    TT_IDENTIFIER
 };
 
 struct Token {

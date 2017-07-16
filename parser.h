@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include "tokenizer.h"
 #include "debug.h"
 
@@ -41,10 +42,11 @@ private:
     std::string outputFilename;
 
     void writeXML(std::string line);
+    std::string tokenName();
+    TokenType tokenType();
+    void eat(bool valid, std::string whatExpected);
     void eatIdentifier();
-    void eat(std::string str);
-    void eatSome(std::vector<std::string> variants);
-    void eatReturnType();
+    void eatStr(std::string str);
     void parseClass();
     void parseClassVarDec();
     void parseSubroutineDec();

@@ -32,7 +32,7 @@ std::string typeToStr(TokenType type) {
         case TT_SYMBOL:  typeStr = "symbol";     break;
         case TT_INT:     typeStr = "int";        break;
         case TT_STRING:  typeStr = "string";     break;
-        case TT_ID:      typeStr = "identifier"; break;
+        case TT_IDENTIFIER:      typeStr = "identifier"; break;
     }
     return typeStr;
 }
@@ -40,7 +40,7 @@ std::string typeToStr(TokenType type) {
 void Tokenizer::addStringToken(std::string token, TokenSubType subType) {
     TokenType type;
     if(subType == ST_ALNUM) {
-        type = TT_ID;
+        type = TT_IDENTIFIER;
         for(std::string str: keywords) {
             if(str == token) {
                 type = TT_KEYWORD;

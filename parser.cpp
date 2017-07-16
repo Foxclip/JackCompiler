@@ -6,68 +6,40 @@ void Parser::writeXML(std::string line) {
     stream << line.c_str() << std::endl;
 }
 
+std::string Parser::tokenName() {
+    return tokenizer.currentToken().token;
+}
+
+TokenType Parser::tokenType() {
+    return tokenizer.currentToken().type;
+}
+
+void Parser::eat(bool valid, std::string whatExpected) {
+    if(tokenizer.hasMoreTokens()) {
+        if(valid) {
+            writeXML("<" + typeToStr(tokenType()) + "> " + tokenName() + " </" + typeToStr(tokenType()) + ">");
+            tokenizer.advance();
+        } else {
+            throw SyntaxError(std::string("'" + tokenName() + "'" + ": " + whatExpected + " expected").c_str());
+        }
+    } else {
+        throw SyntaxError(std::string(whatExpected + " expected, but file ended").c_str());
+    }
+}
+
 void Parser::eatIdentifier() {
-    if(tokenizer.hasMoreTokens()) {
-        if(tokenizer.currentToken().type == TT_ID) {
-            writeXML("<identifier> " + tokenizer.currentToken().token + " </identifier>");
-            tokenizer.advance();
-        } else {
-            throw SyntaxError(std::string("identifier expected").c_str());
-        }
-    } else {
-        throw SyntaxError(std::string("identifier expected, but file ended").c_str());
-    }
+    eat(tokenType() == TT_IDENTIFIER, "identifier");
 }
 
-void Parser::eat(std::string str) {
-    if(tokenizer.hasMoreTokens()) {
-        if(str == tokenizer.currentToken().token) {
-            writeXML("<" + typeToStr(tokenizer.currentToken().type) + "> " + str + " </" + typeToStr(tokenizer.currentToken().type) + ">");
-            tokenizer.advance();
-        } else {
-            throw SyntaxError(std::string("'" + tokenizer.currentToken().token + "'" + ": " + str + " expected").c_str());
-        }
-    } else {
-        throw SyntaxError(std::string("'" + str + "'" + " expected, but file ended").c_str());
-    }
-}
-
-void Parser::eatSome(std::vector<std::string> variants) {
-    std::string variantListString;
-    variantListString += variants[0];
-    for(int i = 0; i < variants.size(); i++) {
-        variantListString += ("or" + variantListString[i]);
-    }
-    if(tokenizer.hasMoreTokens()) {
-        if(std::find(variants.begin(), variants.end(), tokenizer.currentToken().token) != variants.end()) {
-            writeXML("<" + typeToStr(tokenizer.currentToken().type) + "> " + tokenizer.currentToken().token + " </" + typeToStr(tokenizer.currentToken().type) + ">");
-            tokenizer.advance();
-        } else {
-            throw SyntaxError(std::string("'" + tokenizer.currentToken().token + "'" + ": " + variantListString + "expected").c_str());
-        }
-    }  else {
-        throw SyntaxError(std::string(variantListString + " expected, but file ended").c_str());
-    }
-}
-
-void Parser::eatReturnType() {
-    if(tokenizer.hasMoreTokens()) {
-        if(tokenizer.currentToken().token == "void" || tokenizer.currentToken().type == TT_ID) {
-            writeXML("<" + typeToStr(tokenizer.currentToken().type) + "> " + tokenizer.currentToken().token + " </" + typeToStr(tokenizer.currentToken().type) + ">");
-            tokenizer.advance();
-        } else {
-            throw SyntaxError(std::string("'" + tokenizer.currentToken().token + "'" + ": " + "Return type or 'void' expected").c_str());
-        }
-    } else {
-        throw SyntaxError(std::string("Return type or 'void' expected, but file ended").c_str());
-    }
+void Parser::eatStr(std::string str) {
+    eat(str == tokenName(), str);
 }
 
 void Parser::parseClass() {
     writeXML("<class>");
-    eat("class");
+    eatStr("class");
     eatIdentifier();
-    eat("{");
+    eatStr("{");
     while(true) {
         try {
             parseClassVarDec();
@@ -82,34 +54,34 @@ void Parser::parseClass() {
             break;
         }
     }
-    eat("}");
+    eatStr("}");
     writeXML("</class>");
 }
 
 void Parser::parseClassVarDec() {
     writeXML("<classVarDec>");
-    eatSome({"static", "field"});
+    eat(tokenName() == "static" || tokenName() == "field", "'static' or 'field'");
     eatIdentifier();
     while(true) {
         try {
-            eat(",");
+            eatStr(",");
             eatIdentifier();
         } catch(SyntaxError e) {
             break;
         }
     }
-    eat(";");
+    eatStr(";");
     writeXML("</classVarDec>");
 }
 
 void Parser::parseSubroutineDec() {
     writeXML("<subroutineDec>");
-    eatSome({"constructor", "function", "method"});
-    eatReturnType();
+    eat(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method", "'constructor', 'function' or 'method'");
+    eat(tokenName() == "void" || tokenType() == TT_IDENTIFIER, "'void' or identifier");
     eatIdentifier();
-    eat("(");
+    eatStr("(");
     parseParameterList();
-    eat(")");
+    eatStr(")");
     parseSubroutineBody();
     writeXML("</subroutineDec>");
 }
@@ -123,7 +95,7 @@ void Parser::parseSubroutineBody() {
 }
 
 void Parser::parseStatements() {
-    if(tokenizer.currentToken().token == "let") {
+    if(tokenName() == "let") {
         parseLetStatement();
     }
 }
