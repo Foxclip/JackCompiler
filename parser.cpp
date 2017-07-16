@@ -181,7 +181,9 @@ void Parser::parseVarDec() {
 }
 
 void Parser::parseStatements() {
-    throw NotImplementedError("...");
+    if(tokenName() == "let" || tokenName() == "if" || tokenName() == "while" || tokenName() == "do" || tokenName() == "return") {
+        writeXML("<statements>");
+    }
     while(true) {
         try {
             if(tokenName() == "let") {
@@ -203,9 +205,21 @@ void Parser::parseStatements() {
             break;
         }
     }
+    writeXML("</statements>");
 }
 
 void Parser::parseLetStatement() {
+    writeXML("<letStatement>");
+    eatStr("let");
+    eatIdentifier();
+    try {
+        eatStr("[");
+        parseExpression();
+        eatStr("]");
+    } catch(SyntaxError e) {}
+    eatStr("=");
+    parseExpression();
+    eatStr(";");
 }
 
 void Parser::parseIfStatement() {
@@ -218,6 +232,10 @@ void Parser::parseDoStatement() {
 }
 
 void Parser::parseReturnStatement() {
+}
+
+void Parser::parseExpression() {
+    throw NotImplementedError("Expressions are not implemented yet");
 }
 
 void Parser::parse(std::string outputFilename, Tokenizer tokenizer) {
