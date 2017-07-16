@@ -1,9 +1,24 @@
 #include <algorithm>
 #include "parser.h"
 
+double xmlIndentLevel = 0;
+
 void Parser::writeXML(std::string line) {
     std::ofstream stream(outputFilename, std::ios_base::app);
+    for(int i = 0; i < xmlIndentLevel; i++) {
+        for(int j = 0; j < 2; j++) {
+            stream << ' ';
+        }
+    }
     stream << line.c_str() << std::endl;
+    for(char c: line) {
+        if(c == '<' || c == '>') {
+            xmlIndentLevel += 0.5;
+        }
+        if(c == '/') {
+            xmlIndentLevel -= 2;
+        }
+    }
 }
 
 std::string Parser::tokenName() {
@@ -59,7 +74,9 @@ void Parser::parseClass() {
 }
 
 void Parser::parseClassVarDec() {
-    writeXML("<classVarDec>");
+    if(tokenName() == "static" || tokenName() == "field") {
+        writeXML("<classVarDec>");
+    }
     eat(tokenName() == "static" || tokenName() == "field", "'static' or 'field'");
     eatIdentifier();
     while(true) {
@@ -75,7 +92,9 @@ void Parser::parseClassVarDec() {
 }
 
 void Parser::parseSubroutineDec() {
-    writeXML("<subroutineDec>");
+    if(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method") {
+        writeXML("<subroutineDec>");
+    }
     eat(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method", "'constructor', 'function' or 'method'");
     eat(tokenName() == "void" || tokenType() == TT_IDENTIFIER, "'void' or identifier");
     eatIdentifier();
