@@ -46,6 +46,7 @@ private:
     TokenType tokenType();
     void eat(bool valid, std::string whatExpected);
     void eatIdentifier();
+    void eatType();
     void eatStr(std::string str);
     void parseClass();
     void parseClassVarDec();
@@ -55,5 +56,10 @@ private:
     void parseVarDec();
     void parseStatements();
     void parseLetStatement();
+    void parseIfStatement();
+    void parsewhileStatement();
+    void parseDoStatement();
+    void parseReturnStatement();
+      
 
 };

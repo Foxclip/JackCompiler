@@ -64,6 +64,10 @@ void Parser::eatIdentifier() {
     eat(tokenType() == TT_IDENTIFIER, "identifier");
 }
 
+void Parser::eatType() {
+    eat(tokenName() == "int" || tokenName() == "char" || tokenName() == "boolean" || tokenType() == TT_IDENTIFIER, "type");
+}
+
 void Parser::eatStr(std::string str) {
     eat(str == tokenName(), str);
 }
@@ -96,6 +100,7 @@ void Parser::parseClassVarDec() {
         writeXML("<classVarDec>");
     }
     eat(tokenName() == "static" || tokenName() == "field", "'static' or 'field'");
+    eatType();
     eatIdentifier();
     while(true) {
         try {
@@ -114,7 +119,7 @@ void Parser::parseSubroutineDec() {
         writeXML("<subroutineDec>");
     }
     eat(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method", "'constructor', 'function' or 'method'");
-    eat(tokenName() == "void" || tokenType() == TT_IDENTIFIER, "'void' or identifier");
+    eat(tokenName() == "void" || tokenName() == "int" || tokenName() == "char" || tokenName() == "boolean" || tokenType() == TT_IDENTIFIER, "'void' or type");
     eatIdentifier();
     eatStr("(");
     parseParameterList();
@@ -126,12 +131,12 @@ void Parser::parseSubroutineDec() {
 void Parser::parseParameterList() {
     writeXML("<parameterList>");
     try {
-        eatIdentifier();
+        eatType();
         eatIdentifier();
         while(true) {
             try {
                 eatStr(",");
-                eatIdentifier();
+                eatType();
                 eatIdentifier();
             } catch(SyntaxError e) {
                 break;
@@ -144,16 +149,24 @@ void Parser::parseParameterList() {
 void Parser::parseSubroutineBody() {
     writeXML("<subroutineBody>");
     eatStr("{");
-    parseVarDec();
+    while(true) {
+        try {
+            parseVarDec();
+        } catch(SyntaxError e) {
+            break;
+        }
+    }
     parseStatements();
     eatStr("}");
     writeXML("</subroutineBody>");
 }
 
 void Parser::parseVarDec() {
-    writeXML("<varDec>");
+    if(tokenName() == "var") {
+        writeXML("<varDec>");
+    }
     eatStr("var");
-    eatIdentifier();
+    eatType();
     eatIdentifier();
     while(true) {
         try {
@@ -168,10 +181,43 @@ void Parser::parseVarDec() {
 }
 
 void Parser::parseStatements() {
-    throw NotImplementedError("Statements are not implemented yet");
+    throw NotImplementedError("...");
+    while(true) {
+        try {
+            if(tokenName() == "let") {
+                parseLetStatement();
+            }
+            if(tokenName() == "if") {
+                parseIfStatement();
+            }
+            if(tokenName() == "while") {
+                parsewhileStatement();
+            }
+            if(tokenName() == "do") {
+                parseDoStatement();
+            }
+            if(tokenName() == "return") {
+                parseReturnStatement();
+            }
+        } catch(SyntaxError e) {
+            break;
+        }
+    }
 }
 
 void Parser::parseLetStatement() {
+}
+
+void Parser::parseIfStatement() {
+}
+
+void Parser::parsewhileStatement() {
+}
+
+void Parser::parseDoStatement() {
+}
+
+void Parser::parseReturnStatement() {
 }
 
 void Parser::parse(std::string outputFilename, Tokenizer tokenizer) {

@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <fstream>
 
 enum DebugLayer {
     DL_SYMBOLS,
