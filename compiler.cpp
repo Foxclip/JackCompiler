@@ -155,13 +155,15 @@ void Compiler::compileClassVarDec() {
     }
     for(int i = 0; i < (int)varNameList.size(); i++) {
         int varIndex;
-        if(varKind == "field") {
+        if(varKind == "field" || varKind == "this") {
             varKind = "this";
             varIndex = classFieldCount;
             classFieldCount++;
         } else if(varKind == "static") {
             varIndex = classStaticCount;
             classStaticCount++;
+        } else {
+            debugPrintLine("oops... " + varKind + " | " + varType + " | " + varName, DL_COMPILER);
         }
         classSymbolTable.push_back({varNameList[i], varType, varKind, varIndex});
     }
@@ -230,8 +232,18 @@ void Compiler::compileSubroutineBody() {
             break;
         }
     }
-    writeVM(subroutineKind + " " + className + "." + subroutineName + " " + std::to_string(subroutineLocalCount));
+    writeVM("function " + className + "." + subroutineName + " " + std::to_string(subroutineLocalCount));
     writeVM("");
+    if(subroutineKind == "constructor") {
+        writeVM("push constant " + std::to_string(classFieldCount));
+        writeVM("call Memory.alloc 1");
+        writeVM("pop pointer 0");
+        writeVM("");
+    } else if(subroutineKind == "method") {
+        writeVM("push argument 0");
+        writeVM("pop pointer 0");
+        writeVM("");
+    }
     compileStatements();
     eatStr("}");
     writeXML("</subroutineBody>");
@@ -405,13 +417,17 @@ int Compiler::compileExpressionList() {
     int expressionCount = 0;
     writeXML("<expressionList>");
     try {
-        compileExpression();
-        expressionCount++;
+        bool empty = compileExpression();
+        if(!empty) {
+            expressionCount++;
+        }
         while(true) {
             try {
                 eatStr(",");
-                compileExpression();
-                expressionCount++;
+                empty = compileExpression();
+                if(!empty) {
+                    expressionCount++;
+                }
             } catch(SyntaxError e) {
                 break;
             }
@@ -434,8 +450,9 @@ void Compiler::compileTerm() {
             writeVM("neg");
         } else if(tokenName() == "false") {
             writeVM("push constant 0");
+        } else if(tokenName() == "this") {
+            writeVM("push pointer 0");
         } else {
-
             throw SemanticError("'" + tokenName() + "' is not allowed here");
         }
         eatStr(tokenName());
@@ -452,7 +469,18 @@ void Compiler::compileTerm() {
                 std::string varName = eatIdentifier();
                 SymbolTableEntry entry = findInSymbolTables(varName);
                 if(entry.index != -1) {
-                    writeVM("push " + entry.kind + " " + std::to_string(entry.index));
+                    if(entry.kind == "this") {
+                        writeVM("push argument 0");
+                        writeVM("push constant " + std::to_string(entry.index));
+                        writeVM("add");
+                        writeVM("pop pointer 0");
+                        writeVM("push this 0");
+                        writeVM("push argument 0");
+                        writeVM("pop pointer 0");
+                        writeVM("");
+                    } else {
+                        writeVM("push " + entry.kind + " " + std::to_string(entry.index));
+                    }
                 } else {
                     throw SemanticError("variable '" + varName + "' is undefined");
                 }
@@ -498,19 +526,33 @@ void Compiler::compileSubroutineCall() {
     std::string firstIdentifier = eatIdentifier();
     if(tokenName() == "(") {
         calledSubroutineName = firstIdentifier;
+        writeVM("push pointer 0");
         eatStr("(");
-        int parameterCount = compileExpressionList();
+        int parameterCount = compileExpressionList() + 1;
         eatStr(")");
         writeVM("call " + className + "." + calledSubroutineName + " " + std::to_string(parameterCount));
     }
     if(tokenName() == ".") {
         calledClassName = firstIdentifier;
+        bool found = false;
+        SymbolTableEntry entry = findInSymbolTables(calledClassName);
+        if(entry.index != -1) {
+            writeVM("push " + entry.kind + " " + std::to_string(entry.index));
+            found = true;
+        }
         eatStr(".");
         calledSubroutineName = eatIdentifier();
         eatStr("(");
         int parameterCount = compileExpressionList();
+        if(found) {
+            parameterCount++;
+        }
         eatStr(")");
-        writeVM("call " + calledClassName + "." + calledSubroutineName + " " + std::to_string(parameterCount));
+        std::string typeStr = calledClassName;
+        if(found) {
+            typeStr = entry.type;
+        }
+        writeVM("call " + typeStr + "." + calledSubroutineName + " " + std::to_string(parameterCount));
     }
 }
 
