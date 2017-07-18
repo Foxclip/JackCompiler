@@ -92,7 +92,7 @@ std::string Compiler::eatStr(std::string str) {
 void Compiler::compileClass() {
     writeXML("<class>");
     eatStr("class");
-    eatIdentifier();
+    className = eatIdentifier();
     eatStr("{");
     while(true) {
         try {
@@ -153,26 +153,42 @@ void Compiler::compileSubroutineDec() {
     if(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method") {
         writeXML("<subroutineDec>");
     }
-    eat(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method", "'constructor', 'function' or 'method'");
-    eat(tokenName() == "void" || tokenName() == "int" || tokenName() == "char" || tokenName() == "boolean" || tokenType() == TT_IDENTIFIER, "'void' or type");
-    eatIdentifier();
+    std::string subroutineKind = eat(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method", "'constructor', 'function' or 'method'");
+    std::string returnType = eat(tokenName() == "void" || tokenName() == "int" || tokenName() == "char" || tokenName() == "boolean" || tokenType() == TT_IDENTIFIER, "'void' or type");
+    std::string subroutineName = eatIdentifier();
+    subroutineSymbolTable.clear();
+    subroutineArgCount = 0;
+    subroutineLocalCount = 0;
+    if(subroutineKind == "method") {
+        subroutineSymbolTable.push_back({"this", className, "argument", 0});
+        subroutineArgCount++;
+    }
     eatStr("(");
     compileParameterList();
+    debugPrintLine(subroutineName + " arguments:", DL_COMPILER);
+    for(SymbolTableEntry ste: subroutineSymbolTable) {
+        debugPrintLine(ste.name + " | " + ste.type + " | " + ste.kind + " | " + std::to_string(ste.index), DL_COMPILER);
+    }
     eatStr(")");
     compileSubroutineBody();
     writeXML("</subroutineDec>");
 }
 
+void Compiler::addArgument() {
+    std::string argType = eatType();
+    std::string argName = eatIdentifier();
+    subroutineSymbolTable.push_back({argName, argType, "argument", subroutineArgCount});
+    subroutineArgCount++;
+}
+
 void Compiler::compileParameterList() {
     writeXML("<parameterList>");
     try {
-        eatType();
-        eatIdentifier();
+        addArgument();
         while(true) {
             try {
                 eatStr(",");
-                eatType();
-                eatIdentifier();
+                addArgument();
             } catch(SyntaxError e) {
                 break;
             }

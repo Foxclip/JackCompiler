@@ -49,6 +49,9 @@ private:
     std::vector<SymbolTableEntry> classSymbolTable;
     int classFieldCount = 0;
     int classStaticCount = 0;
+    int subroutineArgCount = 0;
+    int subroutineLocalCount = 0;
+    std::string className;
     std::vector<SymbolTableEntry> subroutineSymbolTable;
     std::string outputFilename;
     double xmlIndentLevel = 0;
@@ -63,6 +66,7 @@ private:
     void compileClass();
     void compileClassVarDec();
     void compileSubroutineDec();
+    void addArgument();
     void compileParameterList();
     void compileSubroutineBody();
     void compileVarDec();
