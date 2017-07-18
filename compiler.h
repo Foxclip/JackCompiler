@@ -53,10 +53,12 @@ private:
     int subroutineLocalCount = 0;
     std::string className;
     std::vector<SymbolTableEntry> subroutineSymbolTable;
-    std::string outputFilename;
+    std::string outputXMLFilename;
+    std::string outputVMFilename;
     double xmlIndentLevel = 0;
 
     void writeXML(std::string line);
+    void writeVM(std::string line);
     std::string tokenName();
     int tokenType();
     std::string eat(bool valid, std::string whatExpected);
@@ -77,9 +79,9 @@ private:
     void compileDoStatement();
     void compileReturnStatement();
     void compileExpression();
-    void compileExpressionList();
+    int compileExpressionList();
     void compileTerm();
-    void compileOp();
+    std::string compileOp();
     void compileSubroutineCall();
 
 };

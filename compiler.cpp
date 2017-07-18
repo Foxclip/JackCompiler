@@ -20,7 +20,7 @@ void Compiler::writeXML(std::string line) {
             previousChar = c;
         }
     }
-    std::ofstream stream(outputFilename, std::ios_base::app);
+    std::ofstream stream(outputXMLFilename, std::ios_base::app);
     for(int i = 0; i < xmlIndentLevel; i++) {
         for(int j = 0; j < 2; j++) {
             stream << ' ';
@@ -38,6 +38,11 @@ void Compiler::writeXML(std::string line) {
             previousChar = c;
         }
     }
+}
+
+void Compiler::writeVM(std::string line) {
+    std::ofstream stream(outputVMFilename, std::ios_base::app);
+    stream << line << std::endl;
 }
 
 std::string Compiler::tokenName() {
@@ -166,7 +171,12 @@ void Compiler::compileSubroutineDec() {
     eatStr("(");
     compileParameterList();
     eatStr(")");
+    writeVM(subroutineKind + " " + className + "." + subroutineName + " " + std::to_string(subroutineArgCount));
     compileSubroutineBody();
+    if(returnType == "void") {
+        writeVM("push constant 0");
+        writeVM("return");
+    }
     debugPrintLine(subroutineName + "() vars:", DL_COMPILER);
     for(SymbolTableEntry ste: subroutineSymbolTable) {
         debugPrintLine(ste.name + " | " + ste.type + " | " + ste.kind + " | " + std::to_string(ste.index), DL_COMPILER);
@@ -307,6 +317,7 @@ void Compiler::compileDoStatement() {
     eatStr("do");
     compileSubroutineCall();
     eatStr(";");
+    writeVM("pop temp 0");
     writeXML("</doStatement>");
 }
 
@@ -328,8 +339,9 @@ void Compiler::compileExpression() {
     compileTerm();
     while(true) {
         try {
-            compileOp();
+            std::string func = compileOp();
             compileTerm();
+            writeVM(func);
         } catch(SyntaxError e) {
             break;
         }
@@ -337,25 +349,34 @@ void Compiler::compileExpression() {
     writeXML("</expression>");
 }
 
-void Compiler::compileExpressionList() {
+int Compiler::compileExpressionList() {
+    int expressionCount = 0;
     writeXML("<expressionList>");
     try {
         compileExpression();
+        expressionCount++;
         while(true) {
             try {
                 eatStr(",");
                 compileExpression();
+                expressionCount++;
             } catch(SyntaxError e) {
                 break;
             }
         }
     } catch(SyntaxError e) {}
     writeXML("</expressionList>");
+    return expressionCount;
 }
 
 void Compiler::compileTerm() {
     writeXML("<term>");
-    if(tokenType() == TT_INT || tokenType() == TT_STRING || tokenType() == TT_KEYWORD) {
+    if(tokenType() == TT_INT) {
+        writeVM("push constant " + tokenName());
+        eatStr(tokenName());
+    } else if(tokenType() == TT_STRING) {
+        eatStr(tokenName());
+    } else if(tokenType() == TT_KEYWORD) {
         eatStr(tokenName());
     } else if(tokenType() == TT_IDENTIFIER) {
         if(tokenizer.hasMoreTokens()) {
@@ -383,34 +404,52 @@ void Compiler::compileTerm() {
     writeXML("</term>");
 }
 
-void Compiler::compileOp() {
+std::string Compiler::compileOp() {
+    std::string func;
+    switch(tokenName()[0]) {
+        case '+': func = "add";                  break;
+        case '-': func = "sub";                  break;
+        case '*': func = "call Math.multiply 2"; break;
+        case '/': func = "call Math.divide 2";   break;
+        case '&': func = "and";                  break;
+        case '|': func = "or";                   break;
+        case '<': func = "lt";                   break;
+        case '>': func = "gt";                   break;
+        case '=': func = "eq";                   break;
+    }
     eat(std::string("+-*/&|<>=").find(tokenName()[0]) != std::string::npos, "binary operator");
+    return func;
 }
 
 void Compiler::compileSubroutineCall() {
-    eatIdentifier();
+    std::string calledClassName, calledSubroutineName;
+    std::string firstIdentifier = eatIdentifier();
     if(tokenName() == "(") {
+        calledSubroutineName = firstIdentifier;
         eatStr("(");
-        compileExpressionList();
+        int parameterCount = compileExpressionList();
         eatStr(")");
+        writeVM("call " + className + "." + calledSubroutineName + " " + std::to_string(parameterCount));
     }
     if(tokenName() == ".") {
+        calledClassName = firstIdentifier;
         eatStr(".");
-        eatIdentifier();
+        calledSubroutineName = eatIdentifier();
         eatStr("(");
-        compileExpressionList();
+        int parameterCount = compileExpressionList();
         eatStr(")");
+        writeVM("call " + calledClassName + "." + calledSubroutineName + " " + std::to_string(parameterCount));
     }
-}
-
-std::string setOutputFile(std::string name) {
-    std::string outputFilename = name + ".xml";
-    std::ofstream clear1(outputFilename, std::ios::trunc);
-    return outputFilename;
 }
 
 void Compiler::compile(std::string inputFilename) {
-    outputFilename = setOutputFile(inputFilename.substr(0, inputFilename.rfind(".")));
+    std::string name = inputFilename.substr(0, inputFilename.rfind("."));
+    outputXMLFilename = name + ".xml";
+    outputVMFilename = name + ".vm";
+    std::ofstream clear1(outputXMLFilename, std::ios::trunc);
+    std::ofstream clear2(outputVMFilename, std::ios::trunc);
+    clear1.close();
+    clear2.close();
     tokenizer = Tokenizer();
     tokenizer.tokenize(inputFilename);
     std::cout << "Compiling " + inputFilename << std::endl;
