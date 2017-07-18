@@ -62,7 +62,8 @@ std::string xmlReplace(std::string str) {
     }
 }
 
-void Compiler::eat(bool valid, std::string whatExpected) {
+std::string Compiler::eat(bool valid, std::string whatExpected) {
+    std::string result = tokenName();
     if(tokenizer.hasMoreTokens()) {
         if(valid) {
             writeXML("<" + tokenizer.typeToStr(tokenType()) + "> " + xmlReplace(tokenName()) + " </" + tokenizer.typeToStr(tokenType()) + ">");
@@ -73,18 +74,19 @@ void Compiler::eat(bool valid, std::string whatExpected) {
     } else {
         throw SyntaxError(std::string(whatExpected + " expected, but file ended").c_str());
     }
+    return result;
 }
 
-void Compiler::eatIdentifier() {
-    eat(tokenType() == TT_IDENTIFIER, "identifier");
+std::string Compiler::eatIdentifier() {
+    return eat(tokenType() == TT_IDENTIFIER, "identifier");
 }
 
-void Compiler::eatType() {
-    eat(tokenName() == "int" || tokenName() == "char" || tokenName() == "boolean" || tokenType() == TT_IDENTIFIER, "type");
+std::string Compiler::eatType() {
+    return eat(tokenName() == "int" || tokenName() == "char" || tokenName() == "boolean" || tokenType() == TT_IDENTIFIER, "type");
 }
 
-void Compiler::eatStr(std::string str) {
-    eat(str == tokenName(), str);
+std::string Compiler::eatStr(std::string str) {
+    return eat(str == tokenName(), str);
 }
 
 void Compiler::compileClass() {
@@ -114,16 +116,34 @@ void Compiler::compileClassVarDec() {
     if(tokenName() == "static" || tokenName() == "field") {
         writeXML("<classVarDec>");
     }
-    eat(tokenName() == "static" || tokenName() == "field", "'static' or 'field'");
-    eatType();
-    eatIdentifier();
+    std::string varKind = eat(tokenName() == "static" || tokenName() == "field", "'static' or 'field'");
+    std::string varType = eatType();
+    std::string varName = eatIdentifier();
+    std::vector<std::string> varNameList;
+    varNameList.push_back(varName);
     while(true) {
         try {
             eatStr(",");
-            eatIdentifier();
+            std::string additionalVarName = eatIdentifier();
+            varNameList.push_back(additionalVarName);
         } catch(SyntaxError e) {
             break;
         }
+    }
+    for(int i = 0; i < (int)varNameList.size(); i++) {
+        int varIndex;
+        if(varKind == "field") {
+            varIndex = classFieldCount;
+            classFieldCount++;
+        } else if(varKind == "static") {
+            varIndex = classStaticCount;
+            classStaticCount++;
+        }
+        classSymbolTable.push_back({varNameList[i], varType, varKind, varIndex});
+    }
+    debugPrintLine("class variables:", DL_COMPILER);
+    for(SymbolTableEntry ste: classSymbolTable) {
+        debugPrintLine(ste.name + " | " + ste.type + " | " + ste.kind + " | " + std::to_string(ste.index), DL_COMPILER);
     }
     eatStr(";");
     writeXML("</classVarDec>");

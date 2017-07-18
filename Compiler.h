@@ -4,6 +4,13 @@
 #include "tokenizer.h"
 #include "debug.h"
 
+struct SymbolTableEntry {
+    std::string name;
+    std::string type;
+    std::string kind;
+    int index;
+};
+
 struct CompileError : public std::exception {
 
 public:
@@ -39,16 +46,20 @@ public:
 
 private:
     Tokenizer tokenizer;
+    std::vector<SymbolTableEntry> classSymbolTable;
+    int classFieldCount = 0;
+    int classStaticCount = 0;
+    std::vector<SymbolTableEntry> subroutineSymbolTable;
     std::string outputFilename;
     double xmlIndentLevel = 0;
 
     void writeXML(std::string line);
     std::string tokenName();
     int tokenType();
-    void eat(bool valid, std::string whatExpected);
-    void eatIdentifier();
-    void eatType();
-    void eatStr(std::string str);
+    std::string eat(bool valid, std::string whatExpected);
+    std::string eatIdentifier();
+    std::string eatType();
+    std::string eatStr(std::string str);
     void compileClass();
     void compileClassVarDec();
     void compileSubroutineDec();
