@@ -21,12 +21,12 @@
   <ItemGroup>
     <ClCompile Include="debug.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="parser.cpp" />
+    <ClCompile Include="compiler.cpp" />
     <ClCompile Include="tokenizer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.h" />
-    <ClInclude Include="parser.h" />
+    <ClInclude Include="compiler.h" />
     <ClInclude Include="tokenizer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -1,6 +1,6 @@
 #include "debug.h"
 
-int activeDebugPrintLayer = DL_PARSER;
+int activeDebugPrintLayer = DL_COMPILER;
 
 void debugPrint(std::string str, DebugLayer layer) {
     if(layer == activeDebugPrintLayer) {

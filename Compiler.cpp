@@ -1,7 +1,7 @@
 #include <algorithm>
-#include "parser.h"
+#include "compiler.h"
 
-void Parser::writeXML(std::string line) {
+void Compiler::writeXML(std::string line) {
     int braceCount = 0;
     bool indentDone = false;
     char previousChar = 0;
@@ -40,11 +40,11 @@ void Parser::writeXML(std::string line) {
     }
 }
 
-std::string Parser::tokenName() {
+std::string Compiler::tokenName() {
     return tokenizer.currentToken().token;
 }
 
-int Parser::tokenType() {
+int Compiler::tokenType() {
     return tokenizer.currentToken().type;
 }
 
@@ -62,7 +62,7 @@ std::string xmlReplace(std::string str) {
     }
 }
 
-void Parser::eat(bool valid, std::string whatExpected) {
+void Compiler::eat(bool valid, std::string whatExpected) {
     if(tokenizer.hasMoreTokens()) {
         if(valid) {
             writeXML("<" + tokenizer.typeToStr(tokenType()) + "> " + xmlReplace(tokenName()) + " </" + tokenizer.typeToStr(tokenType()) + ">");
@@ -75,33 +75,33 @@ void Parser::eat(bool valid, std::string whatExpected) {
     }
 }
 
-void Parser::eatIdentifier() {
+void Compiler::eatIdentifier() {
     eat(tokenType() == TT_IDENTIFIER, "identifier");
 }
 
-void Parser::eatType() {
+void Compiler::eatType() {
     eat(tokenName() == "int" || tokenName() == "char" || tokenName() == "boolean" || tokenType() == TT_IDENTIFIER, "type");
 }
 
-void Parser::eatStr(std::string str) {
+void Compiler::eatStr(std::string str) {
     eat(str == tokenName(), str);
 }
 
-void Parser::parseClass() {
+void Compiler::compileClass() {
     writeXML("<class>");
     eatStr("class");
     eatIdentifier();
     eatStr("{");
     while(true) {
         try {
-            parseClassVarDec();
+            compileClassVarDec();
         } catch(SyntaxError e) {
             break;
         }
     }
     while(true) {
         try {
-            parseSubroutineDec();
+            compileSubroutineDec();
         } catch(SyntaxError e) {
             break;
         }
@@ -110,7 +110,7 @@ void Parser::parseClass() {
     writeXML("</class>");
 }
 
-void Parser::parseClassVarDec() {
+void Compiler::compileClassVarDec() {
     if(tokenName() == "static" || tokenName() == "field") {
         writeXML("<classVarDec>");
     }
@@ -129,7 +129,7 @@ void Parser::parseClassVarDec() {
     writeXML("</classVarDec>");
 }
 
-void Parser::parseSubroutineDec() {
+void Compiler::compileSubroutineDec() {
     if(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method") {
         writeXML("<subroutineDec>");
     }
@@ -137,13 +137,13 @@ void Parser::parseSubroutineDec() {
     eat(tokenName() == "void" || tokenName() == "int" || tokenName() == "char" || tokenName() == "boolean" || tokenType() == TT_IDENTIFIER, "'void' or type");
     eatIdentifier();
     eatStr("(");
-    parseParameterList();
+    compileParameterList();
     eatStr(")");
-    parseSubroutineBody();
+    compileSubroutineBody();
     writeXML("</subroutineDec>");
 }
 
-void Parser::parseParameterList() {
+void Compiler::compileParameterList() {
     writeXML("<parameterList>");
     try {
         eatType();
@@ -161,22 +161,22 @@ void Parser::parseParameterList() {
     writeXML("</parameterList>");
 }
 
-void Parser::parseSubroutineBody() {
+void Compiler::compileSubroutineBody() {
     writeXML("<subroutineBody>");
     eatStr("{");
     while(true) {
         try {
-            parseVarDec();
+            compileVarDec();
         } catch(SyntaxError e) {
             break;
         }
     }
-    parseStatements();
+    compileStatements();
     eatStr("}");
     writeXML("</subroutineBody>");
 }
 
-void Parser::parseVarDec() {
+void Compiler::compileVarDec() {
     if(tokenName() == "var") {
         writeXML("<varDec>");
     }
@@ -195,21 +195,21 @@ void Parser::parseVarDec() {
     writeXML("</varDec>");
 }
 
-void Parser::parseStatements() {
+void Compiler::compileStatements() {
     if(tokenName() == "let" || tokenName() == "if" || tokenName() == "while" || tokenName() == "do" || tokenName() == "return") {
         writeXML("<statements>");
     }
     while(true) {
         if(tokenName() == "let") {
-            parseLetStatement();
+            compileLetStatement();
         } else if(tokenName() == "if") {
-            parseIfStatement();
+            compileIfStatement();
         } else if(tokenName() == "while") {
-            parseWhileStatement();
+            compileWhileStatement();
         } else if(tokenName() == "do") {
-            parseDoStatement();
+            compileDoStatement();
         } else if(tokenName() == "return") {
-            parseReturnStatement();
+            compileReturnStatement();
         } else {
             break;
         }
@@ -217,79 +217,79 @@ void Parser::parseStatements() {
     writeXML("</statements>");
 }
 
-void Parser::parseLetStatement() {
+void Compiler::compileLetStatement() {
     writeXML("<letStatement>");
     eatStr("let");
     eatIdentifier();
     try {
         eatStr("[");
-        parseExpression();
+        compileExpression();
         eatStr("]");
     } catch(SyntaxError e) {}
     eatStr("=");
-    parseExpression();
+    compileExpression();
     eatStr(";");
     writeXML("</letStatement>");
 }
 
-void Parser::parseIfStatement() {
+void Compiler::compileIfStatement() {
     writeXML("<ifStatement>");
     eatStr("if");
     eatStr("(");
-    parseExpression();
+    compileExpression();
     eatStr(")");
     eatStr("{");
-    parseStatements();
+    compileStatements();
     eatStr("}");
     try {
         eatStr("else");
         eatStr("{");
-        parseStatements();
+        compileStatements();
         eatStr("}");
     } catch(SyntaxError e) {}
     writeXML("</ifStatement>");
 }
 
-void Parser::parseWhileStatement() {
+void Compiler::compileWhileStatement() {
     writeXML("<whileStatement>");
     eatStr("while");
     eatStr("(");
-    parseExpression();
+    compileExpression();
     eatStr(")");
     eatStr("{");
-    parseStatements();
+    compileStatements();
     eatStr("}");
     writeXML("</whileStatement>");
 }
 
-void Parser::parseDoStatement() {
+void Compiler::compileDoStatement() {
     writeXML("<doStatement>");
     eatStr("do");
-    parseSubroutineCall();
+    compileSubroutineCall();
     eatStr(";");
     writeXML("</doStatement>");
 }
 
-void Parser::parseReturnStatement() {
+void Compiler::compileReturnStatement() {
     writeXML("<returnStatement>");
     eatStr("return");
     try {
-        parseExpression();
+        compileExpression();
     } catch(SyntaxError e) {}
     eatStr(";");
     writeXML("</returnStatement>");
 }
 
-void Parser::parseExpression() {
+void Compiler::compileExpression() {
     if(tokenName() == ")" || tokenName() == ";") {
         return;
     }
     writeXML("<expression>");
-    parseTerm();
+    compileTerm();
     while(true) {
         try {
-            parseOp();
-            parseTerm();
+            compileOp();
+            compileTerm();
         } catch(SyntaxError e) {
             break;
         }
@@ -297,14 +297,14 @@ void Parser::parseExpression() {
     writeXML("</expression>");
 }
 
-void Parser::parseExpressionList() {
+void Compiler::compileExpressionList() {
     writeXML("<expressionList>");
     try {
-        parseExpression();
+        compileExpression();
         while(true) {
             try {
                 eatStr(",");
-                parseExpression();
+                compileExpression();
             } catch(SyntaxError e) {
                 break;
             }
@@ -313,7 +313,7 @@ void Parser::parseExpressionList() {
     writeXML("</expressionList>");
 }
 
-void Parser::parseTerm() {
+void Compiler::compileTerm() {
     writeXML("<term>");
     if(tokenType() == TT_INT || tokenType() == TT_STRING || tokenType() == TT_KEYWORD) {
         eatStr(tokenName());
@@ -322,10 +322,10 @@ void Parser::parseTerm() {
             if(tokenizer.nextToken().token == "[") {
                 eatIdentifier();
                 eatStr("[");
-                parseExpression();
+                compileExpression();
                 eatStr("]");
             } else if(tokenizer.nextToken().token == "(" || tokenizer.nextToken().token == ".") {
-                parseSubroutineCall();
+                compileSubroutineCall();
             } else {
                 eatIdentifier();
             }
@@ -334,31 +334,31 @@ void Parser::parseTerm() {
         }
     } else if(tokenName() == "(") {
         eatStr("(");
-        parseExpression();
+        compileExpression();
         eatStr(")");
     } else if(tokenName() == "-" || tokenName() == "~") {
         eatStr(tokenName());
-        parseTerm();
+        compileTerm();
     }
     writeXML("</term>");
 }
 
-void Parser::parseOp() {
+void Compiler::compileOp() {
     eat(std::string("+-*/&|<>=").find(tokenName()[0]) != std::string::npos, "binary operator");
 }
 
-void Parser::parseSubroutineCall() {
+void Compiler::compileSubroutineCall() {
     eatIdentifier();
     if(tokenName() == "(") {
         eatStr("(");
-        parseExpressionList();
+        compileExpressionList();
         eatStr(")");
     }
     if(tokenName() == ".") {
         eatStr(".");
         eatIdentifier();
         eatStr("(");
-        parseExpressionList();
+        compileExpressionList();
         eatStr(")");
     }
 }
@@ -369,17 +369,17 @@ std::string setOutputFile(std::string name) {
     return outputFilename;
 }
 
-void Parser::parse(std::string inputFilename) {
+void Compiler::compile(std::string inputFilename) {
     outputFilename = setOutputFile(inputFilename.substr(0, inputFilename.rfind(".")));
     tokenizer = Tokenizer();
     tokenizer.tokenize(inputFilename);
-    std::cout << "Parsing " + inputFilename << std::endl;
+    std::cout << "Compiling " + inputFilename << std::endl;
     try {
-        parseClass();
-        debugPrintLine("Succesfully parsed", DL_PARSER);
-        debugPrintLine("", DL_PARSER);
-    } catch(ParserError e) {
-        std::cout << "Parser error: " + std::string(e.what()) << std::endl;
+        compileClass();
+        debugPrintLine("Succesfully compiled", DL_COMPILER);
+        debugPrintLine("", DL_COMPILER);
+    } catch(CompileError e) {
+        std::cout << "Compile error: " + std::string(e.what()) << std::endl;
         std::cout << std::endl;
     }
 }
