@@ -165,12 +165,12 @@ void Compiler::compileSubroutineDec() {
     }
     eatStr("(");
     compileParameterList();
-    debugPrintLine(subroutineName + " arguments:", DL_COMPILER);
+    eatStr(")");
+    compileSubroutineBody();
+    debugPrintLine(subroutineName + " vars:", DL_COMPILER);
     for(SymbolTableEntry ste: subroutineSymbolTable) {
         debugPrintLine(ste.name + " | " + ste.type + " | " + ste.kind + " | " + std::to_string(ste.index), DL_COMPILER);
     }
-    eatStr(")");
-    compileSubroutineBody();
     writeXML("</subroutineDec>");
 }
 
@@ -217,12 +217,16 @@ void Compiler::compileVarDec() {
         writeXML("<varDec>");
     }
     eatStr("var");
-    eatType();
-    eatIdentifier();
+    std::string varType = eatType();
+    std::string varName = eatIdentifier();
+    subroutineSymbolTable.push_back({varName, varType, "local", subroutineLocalCount});
+    subroutineLocalCount++;
     while(true) {
         try {
             eatStr(",");
-            eatIdentifier();
+            varName = eatIdentifier();
+            subroutineSymbolTable.push_back({varName, varType, "local", subroutineLocalCount});
+            subroutineLocalCount++;
         } catch(SyntaxError e) {
             break;
         }
