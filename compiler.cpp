@@ -94,6 +94,20 @@ std::string Compiler::eatStr(std::string str) {
     return eat(str == tokenName(), str);
 }
 
+SymbolTableEntry Compiler::findInSymbolTables(std::string name) {
+    for(SymbolTableEntry entry: subroutineSymbolTable) {
+        if(entry.name == name) {
+            return entry;
+        }
+    }
+    for(SymbolTableEntry entry: classSymbolTable) {
+        if(entry.name == name) {
+            return entry;
+        }
+    }
+    return {"null", "null", "null", -1};
+}
+
 void Compiler::compileClass() {
     writeXML("<class>");
     eatStr("class");
@@ -142,6 +156,7 @@ void Compiler::compileClassVarDec() {
     for(int i = 0; i < (int)varNameList.size(); i++) {
         int varIndex;
         if(varKind == "field") {
+            varKind = "this";
             varIndex = classFieldCount;
             classFieldCount++;
         } else if(varKind == "static") {
@@ -158,9 +173,9 @@ void Compiler::compileSubroutineDec() {
     if(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method") {
         writeXML("<subroutineDec>");
     }
-    std::string subroutineKind = eat(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method", "'constructor', 'function' or 'method'");
+    subroutineKind = eat(tokenName() == "constructor" || tokenName() == "function" || tokenName() == "method", "'constructor', 'function' or 'method'");
     std::string returnType = eat(tokenName() == "void" || tokenName() == "int" || tokenName() == "char" || tokenName() == "boolean" || tokenType() == TT_IDENTIFIER, "'void' or type");
-    std::string subroutineName = eatIdentifier();
+    subroutineName = eatIdentifier();
     subroutineSymbolTable.clear();
     subroutineArgCount = 0;
     subroutineLocalCount = 0;
@@ -171,17 +186,15 @@ void Compiler::compileSubroutineDec() {
     eatStr("(");
     compileParameterList();
     eatStr(")");
-    writeVM(subroutineKind + " " + className + "." + subroutineName + " " + std::to_string(subroutineArgCount));
     compileSubroutineBody();
-    if(returnType == "void") {
-        writeVM("push constant 0");
-        writeVM("return");
-    }
     debugPrintLine(subroutineName + "() vars:", DL_COMPILER);
     for(SymbolTableEntry ste: subroutineSymbolTable) {
         debugPrintLine(ste.name + " | " + ste.type + " | " + ste.kind + " | " + std::to_string(ste.index), DL_COMPILER);
     }
     writeXML("</subroutineDec>");
+    writeVM("");
+    writeVM("");
+    writeVM("");
 }
 
 void Compiler::addArgument() {
@@ -217,6 +230,8 @@ void Compiler::compileSubroutineBody() {
             break;
         }
     }
+    writeVM(subroutineKind + " " + className + "." + subroutineName + " " + std::to_string(subroutineLocalCount));
+    writeVM("");
     compileStatements();
     eatStr("}");
     writeXML("</subroutineBody>");
@@ -270,7 +285,7 @@ void Compiler::compileStatements() {
 void Compiler::compileLetStatement() {
     writeXML("<letStatement>");
     eatStr("let");
-    eatIdentifier();
+    std::string varName = eatIdentifier();
     try {
         eatStr("[");
         compileExpression();
@@ -279,37 +294,66 @@ void Compiler::compileLetStatement() {
     eatStr("=");
     compileExpression();
     eatStr(";");
+    SymbolTableEntry entry = findInSymbolTables(varName);
+    if(entry.index != -1) {
+        writeVM("pop " + entry.kind + " " + std::to_string(entry.index));
+    } else {
+        throw SemanticError("variable '" + varName + "' is undefined");
+    }
     writeXML("</letStatement>");
+    writeVM("");
 }
 
 void Compiler::compileIfStatement() {
+    std::string labelL1 = className + "_ifL1." + std::to_string(runningIndex);
+    std::string labelL2 = className + "_ifL2." + std::to_string(runningIndex);
+    runningIndex++;
     writeXML("<ifStatement>");
     eatStr("if");
     eatStr("(");
     compileExpression();
     eatStr(")");
+    writeVM("not");
+    writeVM("if-goto " + labelL1);
+    writeVM("");
     eatStr("{");
     compileStatements();
     eatStr("}");
+    writeVM("goto " + labelL2);
+    writeVM("label " + labelL1);
+    writeVM("");
     try {
         eatStr("else");
         eatStr("{");
         compileStatements();
         eatStr("}");
     } catch(SyntaxError e) {}
+    writeVM("label " + labelL2);
     writeXML("</ifStatement>");
+    writeVM("");
 }
 
 void Compiler::compileWhileStatement() {
+    std::string labelL1 = className + "_whileL1." + std::to_string(runningIndex);
+    std::string labelL2 = className + "_whileL2." + std::to_string(runningIndex);
+    runningIndex++;
+    writeVM("label " + labelL1);
+    writeVM("");
     writeXML("<whileStatement>");
     eatStr("while");
     eatStr("(");
     compileExpression();
     eatStr(")");
+    writeVM("not");
+    writeVM("if-goto " + labelL2);
+    writeVM("");
     eatStr("{");
     compileStatements();
     eatStr("}");
+    writeVM("goto " + labelL1);
+    writeVM("label " + labelL2);
     writeXML("</whileStatement>");
+    writeVM("");
 }
 
 void Compiler::compileDoStatement() {
@@ -319,21 +363,28 @@ void Compiler::compileDoStatement() {
     eatStr(";");
     writeVM("pop temp 0");
     writeXML("</doStatement>");
+    writeVM("");
 }
 
 void Compiler::compileReturnStatement() {
     writeXML("<returnStatement>");
     eatStr("return");
+    bool isEmpty;
     try {
-        compileExpression();
+        isEmpty = compileExpression();
     } catch(SyntaxError e) {}
     eatStr(";");
     writeXML("</returnStatement>");
+    if(isEmpty) {
+        writeVM("push constant 0");
+    }
+    writeVM("return");
+    writeVM("");
 }
 
-void Compiler::compileExpression() {
+bool Compiler::compileExpression() {
     if(tokenName() == ")" || tokenName() == ";") {
-        return;
+        return true;
     }
     writeXML("<expression>");
     compileTerm();
@@ -347,6 +398,7 @@ void Compiler::compileExpression() {
         }
     }
     writeXML("</expression>");
+    return false;
 }
 
 int Compiler::compileExpressionList() {
@@ -377,6 +429,15 @@ void Compiler::compileTerm() {
     } else if(tokenType() == TT_STRING) {
         eatStr(tokenName());
     } else if(tokenType() == TT_KEYWORD) {
+        if(tokenName() == "true") {
+            writeVM("push constant 1");
+            writeVM("neg");
+        } else if(tokenName() == "false") {
+            writeVM("push constant 0");
+        } else {
+
+            throw SemanticError("'" + tokenName() + "' is not allowed here");
+        }
         eatStr(tokenName());
     } else if(tokenType() == TT_IDENTIFIER) {
         if(tokenizer.hasMoreTokens()) {
@@ -388,7 +449,13 @@ void Compiler::compileTerm() {
             } else if(tokenizer.nextToken().token == "(" || tokenizer.nextToken().token == ".") {
                 compileSubroutineCall();
             } else {
-                eatIdentifier();
+                std::string varName = eatIdentifier();
+                SymbolTableEntry entry = findInSymbolTables(varName);
+                if(entry.index != -1) {
+                    writeVM("push " + entry.kind + " " + std::to_string(entry.index));
+                } else {
+                    throw SemanticError("variable '" + varName + "' is undefined");
+                }
             }
         } else {
             eatIdentifier();
@@ -397,9 +464,14 @@ void Compiler::compileTerm() {
         eatStr("(");
         compileExpression();
         eatStr(")");
-    } else if(tokenName() == "-" || tokenName() == "~") {
+    } else if(tokenName() == "-") {
         eatStr(tokenName());
         compileTerm();
+        writeVM("neg");
+    } else if(tokenName() == "~") {
+        eatStr(tokenName());
+        compileTerm();
+        writeVM("not");
     }
     writeXML("</term>");
 }

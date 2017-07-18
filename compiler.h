@@ -32,6 +32,13 @@ public:
     }
 };
 
+struct SemanticError : public CompileError {
+public:
+    SemanticError(std::string msg) {
+        message = msg;
+    }
+};
+
 struct NotImplementedError : public CompileError {
 public:
     NotImplementedError(std::string msg) {
@@ -51,11 +58,14 @@ private:
     int classStaticCount = 0;
     int subroutineArgCount = 0;
     int subroutineLocalCount = 0;
+    std::string subroutineKind;
+    std::string subroutineName;
     std::string className;
     std::vector<SymbolTableEntry> subroutineSymbolTable;
     std::string outputXMLFilename;
     std::string outputVMFilename;
     double xmlIndentLevel = 0;
+    int runningIndex = 0;
 
     void writeXML(std::string line);
     void writeVM(std::string line);
@@ -65,6 +75,7 @@ private:
     std::string eatIdentifier();
     std::string eatType();
     std::string eatStr(std::string str);
+    SymbolTableEntry findInSymbolTables(std::string name);
     void compileClass();
     void compileClassVarDec();
     void compileSubroutineDec();
@@ -78,7 +89,7 @@ private:
     void compileWhileStatement();
     void compileDoStatement();
     void compileReturnStatement();
-    void compileExpression();
+    bool compileExpression();
     int compileExpressionList();
     void compileTerm();
     std::string compileOp();
