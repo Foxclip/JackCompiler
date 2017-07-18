@@ -1,7 +1,7 @@
 #include <iostream>
 #include "dirent.h"
 #include "tokenizer.h"
-#include "parser.h"
+#include "Compiler.h"
 #include "debug.h"
 
 bool endsWith(std::string const &fullString, std::string const &ending) {
@@ -22,8 +22,8 @@ int main(int argc, char *argv[]) {
         if((dir = opendir(dirName.c_str())) != NULL) {
             while((ent = readdir(dir)) != NULL) {
                 if(ent->d_type == DT_REG && endsWith(ent->d_name, ".jack")) {
-                    Parser parser;
-                    parser.parse(inputName + ent->d_name);
+                    Compiler compiler;
+                    compiler.compile(inputName + ent->d_name);
                 }
             }
             closedir(dir);
@@ -31,8 +31,8 @@ int main(int argc, char *argv[]) {
             perror("Error");
         }
     } else {
-        Parser parser;
-        parser.parse(inputName);
+        Compiler compiler;
+        compiler.compile(inputName);
     }
 
     return 0;
