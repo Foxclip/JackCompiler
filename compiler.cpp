@@ -101,6 +101,10 @@ void Compiler::compileClass() {
             break;
         }
     }
+    debugPrintLine("class variables:", DL_COMPILER);
+    for(SymbolTableEntry ste: classSymbolTable) {
+        debugPrintLine(ste.name + " | " + ste.type + " | " + ste.kind + " | " + std::to_string(ste.index), DL_COMPILER);
+    }
     while(true) {
         try {
             compileSubroutineDec();
@@ -141,10 +145,6 @@ void Compiler::compileClassVarDec() {
         }
         classSymbolTable.push_back({varNameList[i], varType, varKind, varIndex});
     }
-    debugPrintLine("class variables:", DL_COMPILER);
-    for(SymbolTableEntry ste: classSymbolTable) {
-        debugPrintLine(ste.name + " | " + ste.type + " | " + ste.kind + " | " + std::to_string(ste.index), DL_COMPILER);
-    }
     eatStr(";");
     writeXML("</classVarDec>");
 }
@@ -167,7 +167,7 @@ void Compiler::compileSubroutineDec() {
     compileParameterList();
     eatStr(")");
     compileSubroutineBody();
-    debugPrintLine(subroutineName + " vars:", DL_COMPILER);
+    debugPrintLine(subroutineName + "() vars:", DL_COMPILER);
     for(SymbolTableEntry ste: subroutineSymbolTable) {
         debugPrintLine(ste.name + " | " + ste.type + " | " + ste.kind + " | " + std::to_string(ste.index), DL_COMPILER);
     }
