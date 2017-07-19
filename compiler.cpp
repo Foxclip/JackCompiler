@@ -461,6 +461,8 @@ void Compiler::compileTerm() {
             writeVM("push constant 0");
         } else if(tokenName() == "this") {
             writeVM("push pointer 0");
+        } else if(tokenName() == "null") {
+            writeVM("push constant 0");
         } else {
             throw SemanticError("'" + tokenName() + "' is not allowed here");
         }
