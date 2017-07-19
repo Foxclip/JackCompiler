@@ -298,19 +298,29 @@ void Compiler::compileLetStatement() {
     writeXML("<letStatement>");
     eatStr("let");
     std::string varName = eatIdentifier();
+    SymbolTableEntry entry = findInSymbolTables(varName);
+    if(entry.index == -1) {
+        throw SemanticError("variable '" + varName + "' is undefined");
+    }
+    bool arraySet = false;
     try {
         eatStr("[");
+        arraySet = true;
+        writeVM("push " + entry.kind + " " + std::to_string(entry.index));
         compileExpression();
+        writeVM("add");
         eatStr("]");
     } catch(SyntaxError e) {}
     eatStr("=");
     compileExpression();
     eatStr(";");
-    SymbolTableEntry entry = findInSymbolTables(varName);
-    if(entry.index != -1) {
-        writeVM("pop " + entry.kind + " " + std::to_string(entry.index));
+    if(arraySet) {
+        writeVM("pop temp 0");
+        writeVM("pop pointer 1");
+        writeVM("push temp 0");
+        writeVM("pop that 0");
     } else {
-        throw SemanticError("variable '" + varName + "' is undefined");
+        writeVM("pop " + entry.kind + " " + std::to_string(entry.index));
     }
     writeXML("</letStatement>");
     writeVM("");
@@ -443,6 +453,13 @@ void Compiler::compileTerm() {
         writeVM("push constant " + tokenName());
         eatStr(tokenName());
     } else if(tokenType() == TT_STRING) {
+        writeVM("push constant " + std::to_string(tokenName().size()));
+        writeVM("call String.new 1");
+        for(char c: tokenName()) {
+            writeVM("push constant " + std::to_string(c));
+            writeVM("call String.appendChar 2");
+        }
+        writeVM("");
         eatStr(tokenName());
     } else if(tokenType() == TT_KEYWORD) {
         if(tokenName() == "true") {
@@ -459,9 +476,18 @@ void Compiler::compileTerm() {
     } else if(tokenType() == TT_IDENTIFIER) {
         if(tokenizer.hasMoreTokens()) {
             if(tokenizer.nextToken().token == "[") {
-                eatIdentifier();
+                std::string varName = eatIdentifier();
                 eatStr("[");
+                SymbolTableEntry entry = findInSymbolTables(varName);
+                if(entry.index != -1) {
+                    writeVM("push " + entry.kind + " " + std::to_string(entry.index));
+                } else {
+                    throw SemanticError("variable '" + varName + "' is undefined");
+                }
                 compileExpression();
+                writeVM("add");
+                writeVM("pop pointer 1");
+                writeVM("push that 0");
                 eatStr("]");
             } else if(tokenizer.nextToken().token == "(" || tokenizer.nextToken().token == ".") {
                 compileSubroutineCall();
