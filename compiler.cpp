@@ -120,10 +120,6 @@ void Compiler::compileClass() {
             break;
         }
     }
-    debugPrintLine("class variables:", DL_COMPILER);
-    for(SymbolTableEntry ste: classSymbolTable) {
-        debugPrintLine(ste.name + " | " + ste.type + " | " + ste.kind + " | " + std::to_string(ste.index), DL_COMPILER);
-    }
     while(true) {
         try {
             compileSubroutineDec();
@@ -189,10 +185,6 @@ void Compiler::compileSubroutineDec() {
     compileParameterList();
     eatStr(")");
     compileSubroutineBody();
-    debugPrintLine(subroutineName + "() vars:", DL_COMPILER);
-    for(SymbolTableEntry ste: subroutineSymbolTable) {
-        debugPrintLine(ste.name + " | " + ste.type + " | " + ste.kind + " | " + std::to_string(ste.index), DL_COMPILER);
-    }
     writeXML("</subroutineDec>");
     writeVM("");
     writeVM("");
@@ -496,13 +488,15 @@ void Compiler::compileTerm() {
                 SymbolTableEntry entry = findInSymbolTables(varName);
                 if(entry.index != -1) {
                     if(entry.kind == "this") {
-                        writeVM("push argument 0");
-                        writeVM("push constant " + std::to_string(entry.index));
-                        writeVM("add");
-                        writeVM("pop pointer 0");
-                        writeVM("push this 0");
-                        writeVM("push argument 0");
-                        writeVM("pop pointer 0");
+                        writeVM("push pointer 0");                               //current object
+                        writeVM("pop temp 1");                                   //saved copy
+                        writeVM("push pointer 0");                               //current object
+                        writeVM("push constant " + std::to_string(entry.index)); //field index
+                        writeVM("add");                                          //add
+                        writeVM("pop pointer 0");                                //set pointer 0 to desired field
+                        writeVM("push this 0");                                  //push field to the stack
+                        writeVM("push temp 1");                                  //saved copy
+                        writeVM("pop pointer 0");                                //restore pointer 0
                         writeVM("");
                     } else {
                         writeVM("push " + entry.kind + " " + std::to_string(entry.index));
