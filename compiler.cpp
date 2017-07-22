@@ -548,9 +548,13 @@ void Compiler::compileSubroutineCall() {
     std::string firstIdentifier = eatIdentifier();
     if(tokenName() == "(") {
         calledSubroutineName = firstIdentifier;
-        writeVM("push pointer 0");
+        int parameterCount = 0;
+        if(subroutineKind == "method") {
+            parameterCount = 1;
+            writeVM("push pointer 0");
+        }
         eatStr("(");
-        int parameterCount = compileExpressionList() + 1;
+        parameterCount += compileExpressionList();
         eatStr(")");
         writeVM("call " + className + "." + calledSubroutineName + " " + std::to_string(parameterCount));
     }
