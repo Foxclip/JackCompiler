@@ -22,6 +22,7 @@ enum TokenType {
 struct Token {
     std::string token;
     int type;
+    int lineNumber;
 };
 
 class Tokenizer {
@@ -38,6 +39,7 @@ public:
 private:
     std::vector<Token> tokens;
     int currentTokenIndex = 0;
+    int currentLineNumber = 1;
 
     void addCharToken(char c);
     void addStringToken(std::string token, TokenSubType subType);

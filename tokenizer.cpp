@@ -22,7 +22,7 @@ const std::vector<std::string> keywords = {"class", "constructor", "function", "
 void Tokenizer::addCharToken(char c) {
     std::string str;
     str += c;
-    tokens.push_back({str, TT_SYMBOL});
+    tokens.push_back({str, TT_SYMBOL, currentLineNumber});
 }
 
 std::string Tokenizer::typeToStr(int type) {
@@ -54,11 +54,10 @@ void Tokenizer::addStringToken(std::string token, TokenSubType subType) {
     if(subType == ST_STRING) {
         type = TT_STRING;
     }
-    tokens.push_back({token, type});
+    tokens.push_back({token, type, currentLineNumber});
 }
 
 void Tokenizer::tokenize(std::string inputFilename) {
-    std::cout << "Tokenizing " + inputFilename << std::endl;
     std::fstream inputStream(inputFilename);
     if(inputStream.bad()) {
         std::cout << "Error" << std::endl;
@@ -88,6 +87,7 @@ void Tokenizer::tokenize(std::string inputFilename) {
             debugPrintLine(std::string("Read symbol ") + c, DL_SYMBOLS);
         }
         if(c == '\n') {
+            currentLineNumber++;
             if(currentState != S_MULTILINE_COMMENT && currentState != S_STAR) {
                 currentState = S_SPACE;
                 continue;

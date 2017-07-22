@@ -74,7 +74,7 @@ std::string Compiler::eat(bool valid, std::string whatExpected) {
             writeXML("<" + tokenizer.typeToStr(tokenType()) + "> " + xmlReplace(tokenName()) + " </" + tokenizer.typeToStr(tokenType()) + ">");
             tokenizer.advance();
         } else {
-            throw SyntaxError(std::string("'" + tokenName() + "'" + ": " + whatExpected + " expected").c_str());
+            throw SyntaxError(std::string("Line " + std::to_string(tokenizer.currentToken().lineNumber) + ": '" + tokenName() + "'" + ": " + whatExpected + " expected").c_str());
         }
     } else {
         throw SyntaxError(std::string(whatExpected + " expected, but file ended").c_str());
@@ -580,6 +580,7 @@ void Compiler::compileSubroutineCall() {
 
 void Compiler::compile(std::string inputFilename) {
     std::string name = inputFilename.substr(0, inputFilename.rfind("."));
+    std::string individualFilename = inputFilename.substr(inputFilename.rfind("/") + 1, inputFilename.size() - 1);
     outputXMLFilename = name + ".xml";
     outputVMFilename = name + ".vm";
     std::ofstream clear1(outputXMLFilename, std::ios::trunc);
@@ -588,11 +589,9 @@ void Compiler::compile(std::string inputFilename) {
     clear2.close();
     tokenizer = Tokenizer();
     tokenizer.tokenize(inputFilename);
-    std::cout << "Compiling " + inputFilename << std::endl;
+    std::cout << "Compiling " + individualFilename << std::endl;
     try {
         compileClass();
-        debugPrintLine("Succesfully compiled", DL_COMPILER);
-        debugPrintLine("", DL_COMPILER);
     } catch(CompileError e) {
         std::cout << "Compile error: " + std::string(e.what()) << std::endl;
         std::cout << std::endl;
