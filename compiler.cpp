@@ -397,7 +397,7 @@ void Compiler::compileReturnStatement() {
 }
 
 bool Compiler::compileExpression() {
-    if(tokenName() == ")" || tokenName() == ";") {
+    if((tokenName() == ")" || tokenName() == ";") && tokenType() == TT_SYMBOL) {
         return true;
     }
     writeXML("<expression>");
@@ -593,6 +593,7 @@ void Compiler::compile(std::string inputFilename) {
     clear2.close();
     tokenizer = Tokenizer();
     tokenizer.tokenize(inputFilename);
+    //tokenizer.printTokens();
     std::cout << "Compiling " + individualFilename << std::endl;
     try {
         compileClass();

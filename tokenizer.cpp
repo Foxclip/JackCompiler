@@ -161,7 +161,7 @@ void Tokenizer::tokenize(std::string inputFilename) {
                 continue;
             }
         }
-        if(std::isalpha(c)) {
+        if(std::isalpha(c) || c == '_') {
             debugPrintLine("Letter symbol found", DL_SYMBOLS);
             if(currentState == S_SLASH) {
                 addCharToken('/');
@@ -252,6 +252,6 @@ Token Tokenizer::nextToken() {
 
 void Tokenizer::printTokens() {
     for(Token token: tokens) {
-        std::cout << "'" << token.token << "' : " << typeToStr(token.type) << std::endl;
+        std::cout << "Line " << token.lineNumber << ": '" << token.token << "' : " << typeToStr(token.type) << std::endl;
     }
 }
