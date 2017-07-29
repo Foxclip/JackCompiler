@@ -102,7 +102,7 @@ void Tokenizer::tokenize(std::string inputFilename) {
                 debugPrintLine("Comment found", DL_SYMBOLS);
                 currentState = S_COMMENT;
                 continue;
-            } else if(currentState == S_SPACE) {
+            } else if(currentState == S_SPACE || currentState == S_CHAR_TOKEN) {
                 currentState = S_SLASH;
                 continue;
             } else if(currentState == S_STAR) {
