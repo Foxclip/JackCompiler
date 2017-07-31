@@ -292,7 +292,7 @@ void Compiler::compileLetStatement() {
     std::string varName = eatIdentifier();
     SymbolTableEntry entry = findInSymbolTables(varName);
     if(entry.index == -1) {
-        throw SemanticError("variable '" + varName + "' is undefined");
+        throw SemanticError("Line " + std::to_string(tokenizer.currentToken().lineNumber) + ": " + "variable '" + varName + "' is undefined");
     }
     bool arraySet = false;
     try {
@@ -476,7 +476,7 @@ void Compiler::compileTerm() {
                 if(entry.index != -1) {
                     writeVM("push " + entry.kind + " " + std::to_string(entry.index));
                 } else {
-                    throw SemanticError("variable '" + varName + "' is undefined");
+                    throw SemanticError("Line " + std::to_string(tokenizer.currentToken().lineNumber) + ": " + "variable '" + varName + "' is undefined");
                 }
                 compileExpression();
                 writeVM("add");
@@ -504,7 +504,7 @@ void Compiler::compileTerm() {
                         writeVM("push " + entry.kind + " " + std::to_string(entry.index));
                     }
                 } else {
-                    throw SemanticError("variable '" + varName + "' is undefined");
+                    throw SemanticError("Line " + std::to_string(tokenizer.currentToken().lineNumber) + ": " + "variable '" + varName + "' is undefined");
                 }
             }
         } else {
