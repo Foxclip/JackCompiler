@@ -549,7 +549,7 @@ void Compiler::compileSubroutineCall() {
     if(tokenName() == "(") {
         calledSubroutineName = firstIdentifier;
         int parameterCount = 0;
-        if(subroutineKind == "method") {
+        if(subroutineKind == "method" || subroutineKind == "constructor") {
             parameterCount = 1;
             writeVM("push pointer 0");
         }
